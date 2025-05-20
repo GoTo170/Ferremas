@@ -4,13 +4,14 @@ import sqlite3
 conn = sqlite3.connect("ferremas.db")
 cursor = conn.cursor()
 
-# Crear tabla de usuarios
+# Crear tabla de usuarios con campo de rol
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS usuarios (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL
+    password TEXT NOT NULL,
+    rol TEXT NOT NULL
 )
 """)
 
@@ -26,9 +27,22 @@ CREATE TABLE IF NOT EXISTS productos (
 )
 """)
 
-# datos de ejemplo
-cursor.execute("INSERT OR IGNORE INTO usuarios (name, email, password) VALUES (?, ?, ?)", ("Juan", "cliente1@gmail.com", "Cliente.01"))
+# usuarios definidos
+usuarios = [
+    ("Juan", "cliente1@gmail.com", "Cliente.01", "cliente"),
+    ("Diego", "admin1@gmail.com", "Admin.01", "administrador"),
+    ("Antonella", "admin2@gmail.com", "Admin.02", "administrador"),
+    ("Carlos", "vendedor1@gmail.com", "Vendedor.01", "vendedor"),
+    ("Maximiliano", "vendedor2@gmail.com", "Vendedor.02", "vendedor"),
+    ("Javier", "bodeguero1@gmail.com", "Bodeguero.01", "bodeguero"),
+    ("Gianinna", "bodeguero2@gmail.com", "Bodeguero.02", "bodeguero"),
+]
 
+cursor.executemany("""
+INSERT OR IGNORE INTO usuarios (name, email, password, rol) VALUES (?, ?, ?, ?)
+""", usuarios)
+
+# Insertar productos de ejemplo
 productos = [
     ("P001", "Taladro Bosch", "Taladro percutor Bosch 500W.", 10, 49990, "taladro_bosch.jpg"),
     ("P002", "Martillo Stanley", "Martillo de carpintero 16oz Stanley.", 25, 8990, "martillo_stanley.jpg"),

@@ -5,10 +5,11 @@
     <meta charset="UTF-8">
     <title>Login - FERREMAS</title>
     <link rel="stylesheet" href="/static/css/style.css">
-    <button onclick="history.back()">⬅ Volver</button>
 </head>
 
 <body>
+    <button onclick="history.back()">⬅ Volver</button>
+
     <h2>Iniciar Sesión</h2>
     {{mensaje}}
 
@@ -24,13 +25,8 @@
 
     <br>
     <a href="/register"><button type="button">Registrarse</button></a>
-
-    <script>
-        const params = new URLSearchParams(window.location.search);
-        const errorDiv = document.getElementById("error-message");
-
-    </script>
 </body>
+
 
 </html>
 

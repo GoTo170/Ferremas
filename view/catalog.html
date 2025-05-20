@@ -4,18 +4,18 @@
 <head>
     <meta charset="UTF-8">
     <title>Catálogo - FERREMAS</title>
-
     <link rel="stylesheet" href="/static/css/style.css">
-    <button onclick="history.back()">⬅ Volver</button>
-        <div id="catalogo">
-        <a href="/agregar_producto">
-            <button>➕ Agregar Nuevo Producto</button>
-        </a>
-    </div>
 </head>
 
 <body>
+    <button onclick="history.back()">⬅ Volver</button>
+
     <h1>Catálogo de Productos</h1>
+
+    <!-- Botón para agregar producto (solo admin o vendedor) -->
+    <div id="agregar-producto">
+        {{btn_add_product}}
+    </div>
 
     <div id="catalogo">
         <!-- Aquí se insertarán los productos -->
@@ -24,3 +24,4 @@
 </body>
 
 </html>
+
