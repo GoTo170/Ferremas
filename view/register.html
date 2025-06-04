@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Registro - FERREMAS</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/register.css">
 </head>
 
 <body>
@@ -22,11 +22,13 @@
         <input type="email" id="email" name="email" required><br><br>
 
         <label for="password">Contraseña:</label><br>
-        <input type="password" id="password" name="password" pattern="(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}"
-            title="Debe contener mínimo 8 caracteres, una mayúscula, un número y un carácter especial" required><br><br>
+        <input type="password" id="password" name="password"
+            pattern="(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}"
+            title="Debe contener mínimo 8 caracteres, una mayúscula, un número y un carácter especial"
+            required><br><br>
 
-        <button type="submit">Crear Usuario</button>
-        <button type="button" onclick="window.location.href='/login'">Cancelar</button>
+        <button type="submit" class="registro-btn">Crear Usuario</button>
+        <button type="button" class="cancelar-btn" onclick="window.location.href='/login'">Cancelar</button>
     </form>
 </body>
 
