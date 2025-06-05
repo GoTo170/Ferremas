@@ -3,23 +3,31 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catálogo - FERREMAS</title>
-    <link rel="stylesheet" href="/static/css/catalog.css">
+    <link rel="stylesheet" href="/static/css/catalog.css?v=2">
 </head>
 
 <body>
-    <button onclick="history.back()">⬅ Volver</button>
+    <div class="container">
+        <!-- Header con botón volver y título -->
+        <header class="header">
+            <button class="btn-back" onclick="history.back()">
+                <span>←</span> Volver
+            </button>
+            <h1>Catálogo de Productos</h1>
+        </header>
 
-    <h1>Catálogo de Productos</h1>
+        <!-- Sección de botones de acción -->
+        <div class="action-buttons">
+            {{btn_add_product}}
+            {{btn_admin}}
+        </div>
 
-    <!-- Botón para agregar producto (solo admin o vendedor) -->
-    <div id="agregar-producto">
-        {{btn_add_product}}
-    </div>
-
-    <div id="catalogo">
-        <!-- Aquí se insertarán los productos -->
-        {{productos}}
+        <!-- Grid de productos -->
+        <main class="catalog-grid" id="catalogo">
+            {{productos}}
+        </main>
     </div>
 </body>
 

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Administración - FERREMAS</title>
+    <link rel="stylesheet" href="/static/css/administracion.css">
+    <script>
+        function toggle(id) {
+            let contenido = document.getElementById(id);
+            contenido.classList.toggle("mostrar");
+        }
+
+        function confirmarEliminacion(email) {
+            if (confirm("¿Estás seguro de que quieres eliminar este usuario?")) {
+                window.location.href = "/eliminar_usuario?email=" + encodeURIComponent(email);
+            }
+        }
+
+        function filtrarUsuarios() {
+            const filtro = document.getElementById("filtro_busqueda").value.toLowerCase();
+            const usuarios = document.querySelectorAll(".usuario");
+
+            usuarios.forEach(u => {
+                const texto = u.textContent.toLowerCase();
+                u.style.display = texto.includes(filtro) ? "block" : "none";
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <button class="btn-volver" onclick="history.back()">⬅ Volver</button>
+    
+    <div class="container">
+        <h1>Panel de Administración</h1>
+
+        <!-- CREAR USUARIO -->
+        <div class="seccion">
+            <button class="btn-toggle" onclick="toggle('form_crear')">➕ Crear Nuevo Usuario</button>
+            <div id="form_crear" class="contenido">
+                <div class="formulario-container">
+                    <form method="POST" action="/crear_usuario">
+                        <div class="campo">
+                            <label>Nombre:</label>
+                            <input type="text" name="nombre" required>
+                        </div>
+                        <div class="campo">
+                            <label>Email:</label>
+                            <input type="email" name="email" required>
+                        </div>
+                        <div class="campo">
+                            <label>Contraseña:</label>
+                            <input type="password" name="password" required>
+                        </div>
+                        <div class="campo">
+                            <label>Rol:</label>
+                            <select name="rol" required>
+                                <option value="administrador">Administrador</option>
+                                <option value="vendedor">Vendedor</option>
+                                <option value="bodeguero">Bodeguero</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-crear">Crear Usuario</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ELIMINAR USUARIO -->
+        <div class="seccion">
+            <button class="btn-toggle" onclick="toggle('lista_usuarios')">🗑️ Eliminar Usuario</button>
+            <div id="lista_usuarios" class="contenido">
+                <div class="busqueda-container">
+                    <input type="text" id="filtro_busqueda" class="filtro" 
+                           placeholder="Buscar por nombre, correo o rol..." 
+                           oninput="filtrarUsuarios()">
+                </div>
+                <div id="usuarios" class="usuarios-lista">
+                    {{usuarios_html}}
+                </div>
+            </div>
+        </div>
+
+        <div class="mensaje">
+            {{mensaje}}
+        </div>
+    </div>
+</body>
+</html>
+

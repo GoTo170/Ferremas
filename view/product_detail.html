@@ -3,19 +3,47 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{nombre}} - FERREMAS</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-    <button onclick="history.back()">⬅ Volver</button>
+    <link rel="stylesheet" href="/static/css/product_detail.css">
 </head>
 
 <body>
-    <div id="producto-detalle">
-        <h1>{{nombre}}</h1>
-        <img src="{{imagen}}" alt="{{nombre}}" style="width: 200px;">
-        <p>{{descripcion}}</p>
-        <p>Precio: ${{valor}}</p>
-        <p>Stock: {{stock}}</p>
-        <a href="/add_to_cart?codigo={{codigo}}">Agregar al carrito</a>
+    <div class="container">
+        <header class="header">
+            <button class="btn-back" onclick="history.back()">
+                <span>⬅</span>
+                Volver
+            </button>
+            <h1>FERREMAS</h1>
+        </header>
+
+        <div class="product-detail">
+            <div class="product-image">
+                <img src="{{imagen}}" alt="{{nombre}}">
+            </div>
+            
+            <div class="product-info">
+                <h2 class="product-title">{{nombre}}</h2>
+                <p class="product-description">{{descripcion}}</p>
+                
+                <div class="product-price">
+                    <span class="price-label">Precio:</span>
+                    <span class="price-value">${{valor}}</span>
+                </div>
+                
+                <div class="product-stock">
+                    <span class="stock-label">Stock disponible:</span>
+                    <span class="stock-value">{{stock}} unidades</span>
+                </div>
+                
+                <div class="product-actions">
+                    <a href="/add_to_cart?codigo={{codigo}}" class="btn-add-cart">
+                        🛒 Agregar al carrito
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 </body>
 
