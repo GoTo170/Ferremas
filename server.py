@@ -97,7 +97,7 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(html.encode("utf-8"))
             return
 
-        elif self.path == "/catalog":
+        elif self.path.startswith("/catalog"):
             print("Entré al /catalog")
             with open("view/catalog.html", "r", encoding="utf-8") as file:
                 html = file.read()
@@ -109,6 +109,14 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             rol_html = ""
             btn_add_product = ""
             btn_admin = ""
+
+            # Obtener mensaje de la URL si existe
+            query = urllib.parse.urlparse(self.path).query
+            params = urllib.parse.parse_qs(query)
+            mensaje = params.get("mensaje", [""])[0]
+            mensaje_html = ""
+            if mensaje:
+                mensaje_html = f'<div class="message success" style="background-color: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin: 10px 0;">{urllib.parse.unquote_plus(mensaje)}</div>'
 
             if datos_usuario:
                 rol = datos_usuario.get("rol", "")
@@ -152,6 +160,12 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             html = html.replace("{{rol}}", rol_html)
             html = html.replace("{{btn_add_product}}", btn_add_product)
             html = html.replace("{{btn_admin}}", btn_admin)
+            # Agregar el mensaje si existe
+            if "{{mensaje}}" in html:
+                html = html.replace("{{mensaje}}", mensaje_html)
+            else:
+                # Si no existe el placeholder, agregarlo después del header
+                html = html.replace("<body>", f"<body>{mensaje_html}")
 
             self.send_response(200)
             self.send_header("Content-type", "text/html")
@@ -450,7 +464,8 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             self.send_error(404)
             return
 
-        return http.server.SimpleHTTPRequestHandler.do_GET(self)
+        # ESTA LÍNEA ESTABA CAUSANDO EL PROBLEMA - LA ELIMINÉ
+        # return http.server.SimpleHTTPRequestHandler.do_GET(self)
 
     def do_POST(self):
         if self.path == "/login":
