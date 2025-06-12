@@ -1,6 +1,8 @@
 import http.server
 import socketserver
 import urllib.parse
+import urllib.request
+import json
 import os
 import sqlite3
 import uuid
@@ -23,7 +25,77 @@ PORT = 8000
 # Carrito de prueba
 carrito = []
 
+# Cache para tipos de cambio (evitar múltiples llamadas a la API)
+exchange_rates_cache = {}
+cache_expiry = None
+
 class MyHandler(http.server.SimpleHTTPRequestHandler):
+
+    def get_exchange_rates(self):
+        """Obtiene los tipos de cambio desde la API y los cachea por 1 hora"""
+        import datetime
+        
+        global exchange_rates_cache, cache_expiry
+        
+        # Verificar si el cache sigue válido (1 hora)
+        if cache_expiry and datetime.datetime.now() < cache_expiry:
+            return exchange_rates_cache
+        
+        try:
+            # API gratuita sin necesidad de registro
+            url = "https://api.exchangerate-api.com/v4/latest/CLP"
+            
+            with urllib.request.urlopen(url) as response:
+                data = json.loads(response.read().decode())
+                
+                # Guardar solo las monedas que necesitamos
+                exchange_rates_cache = {
+                    'CLP': 1.0,  # Base
+                    'USD': data['rates'].get('USD', 0.001),
+                    'EUR': data['rates'].get('EUR', 0.0009)
+                }
+                
+                # Cache válido por 1 hora
+                cache_expiry = datetime.datetime.now() + datetime.timedelta(hours=1)
+                
+                return exchange_rates_cache
+                
+        except Exception as e:
+            print(f"Error al obtener tipos de cambio: {e}")
+            # Valores por defecto en caso de error
+            return {
+                'CLP': 1.0,
+                'USD': 0.001,
+                'EUR': 0.0009
+            }
+
+    def convert_price(self, price_clp, target_currency):
+        """Convierte un precio de CLP a la moneda objetivo"""
+        rates = self.get_exchange_rates()
+        
+        if target_currency not in rates:
+            return price_clp
+            
+        converted_price = price_clp * rates[target_currency]
+        
+        # Formatear según la moneda
+        if target_currency == 'CLP':
+            return int(converted_price)
+        else:
+            return round(converted_price, 2)
+
+    def format_currency(self, amount, currency):
+        """Formatea el precio según la moneda"""
+        symbols = {
+            'CLP': '$',
+            'USD': '$',
+            'EUR': '€'
+        }
+        
+        if currency == 'CLP':
+            return f"{symbols[currency]}{int(amount)}"
+        else:
+            return f"{symbols[currency]}{amount:.2f}"
 
     def obtener_datos_sesion(self):
         """Obtiene los datos de sesión del usuario desde las cookies"""
@@ -54,9 +126,36 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                     conn.close()
         return None
 
+    def get_currency_from_cookies(self):
+        """Obtiene la moneda seleccionada desde las cookies"""
+        if "Cookie" in self.headers:
+            cookies = self.headers.get("Cookie")
+            for cookie in cookies.split(";"):
+                if "=" in cookie:
+                    key, value = cookie.strip().split("=", 1)
+                    if key == "currency":
+                        return value if value in ['CLP', 'USD', 'EUR'] else 'CLP'
+        return 'CLP'  # Por defecto
+
     def do_GET(self):
         if self.path == "/":
             self.path = "view/index.html"
+
+        elif self.path.startswith("/set_currency"):
+            """Endpoint para cambiar la moneda"""
+            query = urllib.parse.urlparse(self.path).query
+            params = urllib.parse.parse_qs(query)
+            currency = params.get("currency", ["CLP"])[0]
+            
+            if currency in ['CLP', 'USD', 'EUR']:
+                self.send_response(302)
+                self.send_header("Location", "/catalog")
+                self.send_header("Set-Cookie", f"currency={currency}; Path=/")
+                self.end_headers()
+            else:
+                self.send_response(400)
+                self.end_headers()
+            return
 
         elif self.path.startswith("/login"):
             # Leer la plantilla HTML
@@ -102,6 +201,9 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             with open("view/catalog.html", "r", encoding="utf-8") as file:
                 html = file.read()
 
+            # Obtener moneda seleccionada
+            current_currency = self.get_currency_from_cookies()
+
             # Obtener datos del usuario desde la cookie de sesión
             datos_usuario = self.obtener_datos_sesion()
             print("datos_usuario:", datos_usuario)
@@ -117,6 +219,25 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             mensaje_html = ""
             if mensaje:
                 mensaje_html = f'<div class="message success" style="background-color: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin: 10px 0;">{urllib.parse.unquote_plus(mensaje)}</div>'
+
+            # Crear selector de moneda
+            currency_selector = f'''
+            <div class="currency-selector" style="margin: 20px 0; text-align: center;">
+                <label for="currency-select" style="margin-right: 10px; font-weight: bold;">Moneda:</label>
+                <select id="currency-select" onchange="changeCurrency()" style="padding: 5px 10px; font-size: 14px; border-radius: 5px; border: 1px solid #ccc;">
+                    <option value="CLP" {"selected" if current_currency == "CLP" else ""}>Peso Chileno (CLP)</option>
+                    <option value="USD" {"selected" if current_currency == "USD" else ""}>Dólar Americano (USD)</option>
+                    <option value="EUR" {"selected" if current_currency == "EUR" else ""}>Euro (EUR)</option>
+                </select>
+            </div>
+            <script>
+                function changeCurrency() {{
+                    var select = document.getElementById('currency-select');
+                    var currency = select.value;
+                    window.location.href = '/set_currency?currency=' + currency;
+                }}
+            </script>
+            '''
 
             if datos_usuario:
                 rol = datos_usuario.get("rol", "")
@@ -142,15 +263,21 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             else:
                 print("No se encontraron datos de sesión. El usuario no está autenticado.")
 
-            # Armar HTML de productos
+            # Armar HTML de productos con conversión de moneda
             productos_html = ""
             for producto in product_model.listar_productos():
                 ruta_imagen = f"/static/img/{producto['imagen']}"
+                
+                # Convertir precio a la moneda seleccionada
+                precio_original = producto['valor']
+                precio_convertido = self.convert_price(precio_original, current_currency)
+                precio_formateado = self.format_currency(precio_convertido, current_currency)
+                
                 productos_html += f"""
                 <div class="producto">
                     <img src="{ruta_imagen}" alt="{producto['nombre']}">
                     <h2>{producto['nombre']}</h2>
-                    <p class="precio">${producto['valor']}</p>
+                    <p class="precio">{precio_formateado}</p>
                     <a href="/product_detail?codigo={producto['codigo']}" class="btn-ver-mas">Ver más</a>
                 </div>
                 """
@@ -160,12 +287,20 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             html = html.replace("{{rol}}", rol_html)
             html = html.replace("{{btn_add_product}}", btn_add_product)
             html = html.replace("{{btn_admin}}", btn_admin)
+            
+            # Insertar selector de moneda (buscar un lugar apropiado en el HTML)
+            if "{{currency_selector}}" in html:
+                html = html.replace("{{currency_selector}}", currency_selector)
+            else:
+                # Si no existe el placeholder, agregarlo después del body
+                html = html.replace("<body>", f"<body>{currency_selector}")
+            
             # Agregar el mensaje si existe
             if "{{mensaje}}" in html:
                 html = html.replace("{{mensaje}}", mensaje_html)
             else:
-                # Si no existe el placeholder, agregarlo después del header
-                html = html.replace("<body>", f"<body>{mensaje_html}")
+                # Si no existe el placeholder, agregarlo después del currency selector
+                html = html.replace(currency_selector, f"{currency_selector}{mensaje_html}")
 
             self.send_response(200)
             self.send_header("Content-type", "text/html")
@@ -253,16 +388,28 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                     with open("view/product_detail.html", "r", encoding="utf-8") as file:
                         html = file.read()
 
+                    # Obtener moneda actual
+                    current_currency = self.get_currency_from_cookies()
+
                     # Ajustar ruta de imagen - verificar si ya tiene la ruta completa
                     if not producto["imagen"].startswith("/static/"):
                         producto["imagen"] = f"/static/img/{producto['imagen']}"
 
+                    # Convertir precio
+                    precio_original = producto['valor']
+                    precio_convertido = self.convert_price(precio_original, current_currency)
+                    precio_formateado = self.format_currency(precio_convertido, current_currency)
+                    
                     # Reemplazar variables en el HTML
                     for key, value in producto.items():
                         # Manejar valores None
                         if value is None:
                             value = "No disponible"
-                        html = html.replace(f"{{{{{key}}}}}", str(value))
+                        # Reemplazar precio con el convertido
+                        if key == 'valor':
+                            html = html.replace(f"{{{{{key}}}}}", precio_formateado)
+                        else:
+                            html = html.replace(f"{{{{{key}}}}}", str(value))
 
                     self.send_response(200)
                     self.send_header("Content-type", "text/html; charset=utf-8")
@@ -323,6 +470,9 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             with open("view/cart.html", "r", encoding="utf-8") as file:
                 html = file.read()
 
+            # Obtener moneda actual
+            current_currency = self.get_currency_from_cookies()
+
             productos_html = ""
             total = 0
 
@@ -330,26 +480,36 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 for item in carrito:
                     producto = product_model.obtener_producto_por_codigo(item["codigo"])
                     if producto:
-                        subtotal = producto["valor"] * item["cantidad"]
+                        # Convertir precios
+                        precio_unitario = self.convert_price(producto["valor"], current_currency)
+                        subtotal = precio_unitario * item["cantidad"]
                         total += subtotal
+                        
+                        precio_unitario_formateado = self.format_currency(precio_unitario, current_currency)
+                        subtotal_formateado = self.format_currency(subtotal, current_currency)
+                        
                         productos_html += f"""
                         <tr>
-                            <td>{producto['nombre']}</td>
-                            <td>
-                                {item['cantidad']}
-                                <a href="/cart?sumar={item['codigo']}">➕</a>
-                                <a href="/cart?restar={item['codigo']}">➖</a>
+                            <td class="product-name">{producto['nombre']}</td>
+                            <td class="quantity-controls">
+                                <span>{item['cantidad']}</span>
+                                <a href="/cart?sumar={item['codigo']}" title="Aumentar cantidad">➕</a>
+                                <a href="/cart?restar={item['codigo']}" title="Disminuir cantidad">➖</a>
                             </td>
-                            <td>${subtotal}</td>
-                            <td><a href="/cart?eliminar={item['codigo']}">❌</a></td>
+                            <td class="subtotal">{subtotal_formateado}</td>
+                            <td class="remove-item">
+                                <a href="#" onclick="confirmarEliminacion('{item['codigo']}', '{producto['nombre'].replace("'", "\\'")}'); return false;" title="Eliminar producto">🗑️</a>
+                            </td>
                         </tr>
                         """
                 mensaje = ""
             else:
-                mensaje = "<strong>Tu carrito está vacío</strong>"
+                mensaje = "Tu carrito está vacío"
+
+            total_formateado = self.format_currency(total, current_currency)
 
             html = html.replace("{{productos}}", productos_html)
-            html = html.replace("{{total}}", f"${total}")
+            html = html.replace("{{total}}", total_formateado)
             html = html.replace("{{mensaje_carrito}}", mensaje)
 
             self.send_response(200)
@@ -365,13 +525,13 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 return
 
-            # Calcular el total del carrito
-            total = 0
+            # Calcular el total del carrito en CLP (para Webpay)
+            total_clp = 0
             for item in carrito:
                 producto = product_model.obtener_producto_por_codigo(item["codigo"])
                 if producto:
-                    subtotal = producto["valor"] * item["cantidad"]
-                    total += subtotal
+                    subtotal = producto["valor"] * item["cantidad"]  # Precio original en CLP
+                    total_clp += subtotal
 
             # Crear una orden de compra única
             buy_order = uuid.uuid4().hex[:26]
@@ -379,9 +539,9 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             return_url = "http://localhost:8000/confirmacion_pago"
 
             try:
-                # Crear la transacción
+                # Crear la transacción (siempre en CLP para Webpay)
                 tx = Transaction(webpay_options)
-                response = tx.create(buy_order, session_id, total, return_url)
+                response = tx.create(buy_order, session_id, total_clp, return_url)
 
                 # Redirigir al usuario al formulario de pago de Webpay
                 self.send_response(302)
@@ -463,9 +623,8 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
         else:
             self.send_error(404)
             return
-
-        # ESTA LÍNEA ESTABA CAUSANDO EL PROBLEMA - LA ELIMINÉ
-        # return http.server.SimpleHTTPRequestHandler.do_GET(self)
+        
+        return http.server.SimpleHTTPRequestHandler.do_GET(self)
 
     def do_POST(self):
         if self.path == "/login":

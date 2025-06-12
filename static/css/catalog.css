@@ -64,6 +64,78 @@ body {
     background-clip: text;
 }
 
+/* Selector de Moneda */
+.currency-selector {
+    background: var(--card-background);
+    padding: 20px 30px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    border: 2px solid #c0392b;
+    transition: var(--transition);
+}
+
+.currency-selector:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+}
+
+.currency-selector label {
+    color: var(--primary-color);
+    font-weight: 700;
+    font-size: 16px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.currency-selector select {
+    color: #c0392b;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    min-width: 220px;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 45px;
+}
+
+.currency-selector select:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.3);
+}
+
+.currency-selector select option {
+    background: #c0392b;
+    color: white;
+    font-weight: 600;
+    padding: 10px;
+}
+
+/* Animación para el cambio de moneda */
+.currency-selector.loading::after {
+    content: "⏳";
+    margin-left: 10px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 /* Botón volver */
 .btn-back {
     background: #c0392b;
@@ -130,6 +202,28 @@ body {
     background: #a93226;
 }
 
+/* Mensajes de estado */
+.message {
+    padding: 15px 20px;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+    font-weight: 600;
+    text-align: center;
+    box-shadow: var(--shadow);
+}
+
+.message.success {
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
+    color: #155724;
+    border: 2px solid #c3e6cb;
+}
+
+.message.error {
+    background: linear-gradient(135deg, #f8d7da, #f1aeb5);
+    color: #721c24;
+    border: 2px solid #f1aeb5;
+}
+
 /* Grid de catálogo */
 .catalog-grid {
     display: grid;
@@ -187,10 +281,15 @@ body {
 }
 
 .producto .precio {
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     font-weight: 700;
     color: var(--success-color);
     margin: 15px 0;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, rgba(39, 174, 96, 0.1), rgba(39, 174, 96, 0.05));
+    border-radius: 6px;
+    border-left: 4px solid var(--success-color);
+    display: inline-block;
 }
 
 .producto .stock {
@@ -279,6 +378,17 @@ body {
         font-size: 2rem;
     }
     
+    .currency-selector {
+        flex-direction: column;
+        gap: 12px;
+        padding: 20px;
+    }
+    
+    .currency-selector select {
+        width: 100%;
+        max-width: 280px;
+    }
+    
     .catalog-grid {
         grid-template-columns: 1fr;
         gap: 20px;
@@ -300,6 +410,20 @@ body {
 @media (max-width: 480px) {
     .header h1 {
         font-size: 1.8rem;
+    }
+    
+    .currency-selector {
+        padding: 15px;
+    }
+    
+    .currency-selector label {
+        font-size: 14px;
+    }
+    
+    .currency-selector select {
+        font-size: 14px;
+        padding: 10px 15px;
+        padding-right: 40px;
     }
     
     .producto {
@@ -350,6 +474,10 @@ body {
     animation: fadeIn 0.6s ease-out;
 }
 
+.currency-selector {
+    animation: fadeIn 0.4s ease-out;
+}
+
 /* Efectos adicionales */
 .producto::after {
     content: '';
@@ -364,4 +492,33 @@ body {
 
 .producto:hover::after {
     left: 100%;
+}
+
+/* Efecto hover para el selector de moneda */
+.currency-selector::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, #c0392b, #e74c3c, #c0392b);
+    border-radius: var(--border-radius);
+    z-index: -1;
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.currency-selector {
+    position: relative;
+}
+
+.currency-selector:hover::before {
+    opacity: 1;
+    animation: borderGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes borderGlow {
+    0% { opacity: 0.7; }
+    100% { opacity: 1; }
 }

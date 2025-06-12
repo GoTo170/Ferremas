@@ -3,25 +3,99 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carrito de Compras - FERREMAS</title>
-    <link rel="stylesheet" href="../static/css/style.css">
-    <button onclick="history.back()">⬅ Volver</button>
+    <link rel="stylesheet" href="../static/css/cart.css">
 </head>
 
 <body>
-    <h1>Carrito de Compras</h1>
-    <table>
-        <tr>
-            <th>Producto</th>
-            <th>Cantidad</th>
-            <th>Subtotal</th>
-        </tr>
-        {{productos}}
-    </table>
-    <p>{{mensaje_carrito}}</p>
-    <p>Total: {{total}}</p>
-    <a href="/checkout">Continuar con la compra</a>
+    <div class="container">
+        <div class="cart-header">
+            <button class="btn-back" onclick="history.back()">
+                <span>⬅</span> Volver
+            </button>
+            <h1>Carrito de Compras</h1>
+            <div></div> <!-- Spacer para centrar el título -->
+        </div>
 
+        <!-- Mensaje del carrito (se muestra cuando está vacío) -->
+        <div class="cart-message">
+            {{mensaje_carrito}}
+        </div>
+
+        <!-- Tabla del carrito (solo se muestra si hay productos) -->
+        <table class="cart-table">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Subtotal</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{productos}}
+            </tbody>
+        </table>
+
+        <!-- Total y botón de checkout -->
+        <div class="cart-total">
+            <span class="total-label">Total:</span>
+            <span class="total-amount">{{total}}</span>
+        </div>
+
+        <a href="/checkout" class="checkout-button">
+            🛒 Continuar con la compra
+        </a>
+    </div>
+
+    <script>
+        // Ocultar tabla y mostrar mensaje si el carrito está vacío
+        document.addEventListener('DOMContentLoaded', function() {
+            const mensajeCarrito = document.querySelector('.cart-message').innerHTML.trim();
+            const tabla = document.querySelector('.cart-table');
+            const cartTotal = document.querySelector('.cart-total');
+            const checkoutButton = document.querySelector('.checkout-button');
+            
+            if (mensajeCarrito.includes('vacío') || mensajeCarrito.includes('empty')) {
+                tabla.style.display = 'none';
+                cartTotal.style.display = 'none';
+                checkoutButton.style.display = 'none';
+                
+                // Agregar clase para estilo de carrito vacío
+                document.querySelector('.cart-message').classList.add('empty-cart');
+                document.querySelector('.cart-message').innerHTML = `
+                    <h2>🛒 Tu carrito está vacío</h2>
+                    <p>¡Explora nuestro catálogo y encuentra productos increíbles!</p>
+                    <a href="/catalog" class="btn-catalog">Ver Catálogo</a>
+                `;
+            } else {
+                document.querySelector('.cart-message').style.display = 'none';
+            }
+        });
+
+        // Función para confirmar eliminación de productos
+        function confirmarEliminacion(codigo, nombre) {
+            if (confirm(`¿Estás seguro de que deseas eliminar "${nombre}" del carrito?`)) {
+                window.location.href = `/cart?eliminar=${codigo}`;
+            }
+        }
+
+        // Animación suave para los botones de cantidad
+        document.addEventListener('DOMContentLoaded', function() {
+            const quantityButtons = document.querySelectorAll('.quantity-controls a');
+            
+            quantityButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    // Efecto visual al hacer clic
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>
