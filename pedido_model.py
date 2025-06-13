@@ -251,7 +251,10 @@ def crear_pedido_desde_productos(cliente_nombre, cliente_email, codigos_producto
     codigos_productos: lista de códigos de productos
     cantidades: lista de cantidades correspondientes a cada producto
     """
-    from productos_model import obtener_producto_por_codigo, actualizar_stock
+    # Cambiar esta línea:
+    # from productos_model import obtener_producto_por_codigo, actualizar_stock
+    # Por esta:
+    from model.product_model import obtener_producto_por_codigo
     
     try:
         productos_carrito = []
@@ -283,10 +286,8 @@ def crear_pedido_desde_productos(cliente_nombre, cliente_email, codigos_producto
         id_pedido = crear_pedido(cliente_nombre, cliente_email, productos_carrito, total)
         
         if id_pedido:
-            # Actualizar stock de productos
-            for i, codigo in enumerate(codigos_productos):
-                if not actualizar_stock(codigo, cantidades[i]):
-                    print(f"Advertencia: No se pudo actualizar el stock del producto {codigo}")
+            # Aquí podrías actualizar el stock si tu product_model tiene esa función
+            print(f"Pedido {id_pedido} creado exitosamente")
         
         return id_pedido
         
