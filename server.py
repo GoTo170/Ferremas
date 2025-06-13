@@ -6,6 +6,7 @@ import json
 import os
 import sqlite3
 import uuid
+import pedido_model
 
 from model import product_model
 from transbank.webpay.webpay_plus.transaction import Transaction
@@ -211,6 +212,7 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             rol_html = ""
             btn_add_product = ""
             btn_admin = ""
+            btn_bodeguero = ""
 
             # Obtener mensaje de la URL si existe
             query = urllib.parse.urlparse(self.path).query
@@ -260,6 +262,14 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                         </a>
                     </div>
                     '''
+                if rol in ["administrador", "bodeguero"]:
+                    btn_bodeguero = '''
+                    <div id="bodeguero-button">
+                        <a href="/bodeguero">
+                            <button>Bodega</button>
+                        </a>
+                    </div>
+                    '''
             else:
                 print("No se encontraron datos de sesión. El usuario no está autenticado.")
 
@@ -287,6 +297,7 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             html = html.replace("{{rol}}", rol_html)
             html = html.replace("{{btn_add_product}}", btn_add_product)
             html = html.replace("{{btn_admin}}", btn_admin)
+            html = html.replace("{{btn_bodeguero}}", btn_bodeguero)
             
             # Insertar selector de moneda (buscar un lugar apropiado en el HTML)
             if "{{currency_selector}}" in html:
@@ -337,6 +348,84 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
 
             html = html.replace("{{usuarios_html}}", usuarios_html)
             html = html.replace("{{mensaje}}", "")
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(html.encode("utf-8"))
+            return
+        
+        elif self.path.startswith("/bodeguero"):
+            print("Entré al /bodeguero")
+            
+            # Verificar autenticación y rol
+            datos_usuario = self.obtener_datos_sesion()
+            if not datos_usuario or datos_usuario.get("rol") not in ["administrador", "bodeguero"]:
+                self.send_response(403)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                self.wfile.write(b"Acceso denegado")
+                return
+            
+            with open("view/bodeguero.html", "r", encoding="utf-8") as file:
+                html = file.read()
+
+            # Obtener mensaje de la URL si existe
+            query = urllib.parse.urlparse(self.path).query
+            params = urllib.parse.parse_qs(query)
+            mensaje = params.get("mensaje", [""])[0]
+            mensaje_html = ""
+            if mensaje:
+                mensaje_html = f'<div class="message success" style="background-color: #d4edda; color: #155724; padding: 10px; border-radius: 5px; margin: 10px 0;">{urllib.parse.unquote_plus(mensaje)}</div>'
+
+            # Obtener pedidos pendientes (asumiendo que tienes un modelo de pedidos)
+            # Aquí debes adaptar según tu modelo de datos
+            pedidos_html = ""
+            try:
+                # Ejemplo: obtener pedidos con estado "pendiente" o "pagado"
+                pedidos_pendientes = pedido_model.obtener_pedidos_pendientes()  # Adapta según tu modelo
+                
+                for pedido in pedidos_pendientes:
+                    pedidos_html += f"""
+                    <tr>
+                        <td>{pedido['id_pedido']}</td>
+                        <td>{pedido['cliente_nombre']}</td>
+                        <td>{pedido['cliente_email']}</td>
+                        <td>
+                            <ul>
+                    """
+                    
+                    # Obtener productos del pedido
+                    productos_pedido = pedido_model.obtener_productos_pedido(pedido['id_pedido'])  # Adapta según tu modelo
+                    for producto in productos_pedido:
+                        pedidos_html += f"""
+                                <li>{producto['nombre']} - Cantidad: {producto['cantidad']}</li>
+                        """
+                    
+                    pedidos_html += f"""
+                            </ul>
+                        </td>
+                        <td>${pedido['total']:,.0f}</td>
+                        <td>{pedido['fecha_pedido']}</td>
+                        <td>
+                            <form method="POST" action="/bodeguero" style="display: inline;">
+                                <input type="hidden" name="action" value="enviar_pedido">
+                                <input type="hidden" name="id_pedido" value="{pedido['id_pedido']}">
+                                <button type="submit" class="btn-enviar" onclick="return confirm('¿Confirmar envío del pedido #{pedido['id_pedido']}?')">
+                                    Enviar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    """
+            except Exception as e:
+                print(f"Error al obtener pedidos: {e}")
+                pedidos_html = "<tr><td colspan='7'>Error al cargar pedidos</td></tr>"
+
+            # Reemplazar placeholders
+            html = html.replace("{{pedidos}}", pedidos_html)
+            html = html.replace("{{mensaje}}", mensaje_html)
+            html = html.replace("{{usuario_nombre}}", datos_usuario.get("nombre", "Usuario"))
+
             self.send_response(200)
             self.send_header("Content-type", "text/html")
             self.end_headers()
@@ -561,19 +650,43 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             tbk_id_sesion = query.get('TBK_ID_SESION', [None])[0]
 
             self.send_response(200)
-            self.send_header("Content-type", "text/html")
+            self.send_header("Content-type", "text/html; charset=utf-8")
             self.end_headers()
 
             if tbk_token is None:
                 # Pago aprobado
+                try:
+                    # Extraer ID del pedido de la orden de compra si es posible
+                    if tbk_orden_compra and tbk_orden_compra.startswith("ORDER_"):
+                        id_pedido = tbk_orden_compra.split("_")[1]
+                        # Actualizar estado del pedido a "pagado"
+                        pedido_model.actualizar_estado_pedido(id_pedido, "pagado")
+                        print(f"Pedido {id_pedido} marcado como pagado")
+                except Exception as e:
+                    print(f"Error al actualizar estado del pedido: {e}")
+                
                 carrito.clear()  # Vaciar el carrito
-                mensaje = "<h1>Pago aprobado</h1><p>¡Gracias por tu compra!</p>"
+                mensaje = "<h1>Pago aprobado</h1><p>¡Gracias por tu compra! Tu pedido ha sido registrado correctamente.</p>"
             else:
                 # Pago cancelado
-                mensaje = f"<h1>Pago cancelado</h1><p>Orden: {tbk_orden_compra}</p>"
+                try:
+                    # Si el pago fue cancelado, marcar el pedido como cancelado
+                    if tbk_orden_compra and tbk_orden_compra.startswith("ORDER_"):
+                        id_pedido = tbk_orden_compra.split("_")[1]
+                        pedido_model.actualizar_estado_pedido(id_pedido, "cancelado")
+                        print(f"Pedido {id_pedido} marcado como cancelado")
+                except Exception as e:
+                    print(f"Error al actualizar estado del pedido cancelado: {e}")
+                    
+                mensaje = f"<h1>Pago cancelado</h1><p>Tu pedido ha sido cancelado. Orden: {tbk_orden_compra}</p>"
 
             self.wfile.write(f"""
-                <html><body>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <title>Confirmación de Pago</title>
+                </head>
+                <body>
                 {mensaje}
                 <p><a href='/catalog'>Volver al catálogo</a></p>
                 </body></html>
@@ -763,6 +876,56 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             # Redirigir de vuelta a administración
             self.send_response(302)
             self.send_header("Location", "/administracion")
+            self.end_headers()
+            return
+        
+        elif self.path.startswith("/bodeguero"):
+            print("POST en /bodeguero")
+            
+            # Verificar autenticación y rol
+            datos_usuario = self.obtener_datos_sesion()
+            if not datos_usuario or datos_usuario.get("rol") not in ["administrador", "bodeguero"]:
+                self.send_response(403)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                self.wfile.write(b"Acceso denegado")
+                return
+
+            # Leer datos del formulario
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length).decode('utf-8')
+            form_data = urllib.parse.parse_qs(post_data)
+            
+            action = form_data.get("action", [""])[0]
+            
+            if action == "enviar_pedido":
+                id_pedido = form_data.get("id_pedido", [""])[0]
+                
+                try:
+                    # Actualizar estado del pedido a "en_despacho" o "enviado"
+                    resultado = pedido_model.actualizar_estado_pedido(id_pedido, "en_despacho")  # Adapta según tu modelo
+                    
+                    if resultado:
+                        # Opcional: registrar la acción del bodeguero
+                        usuario_id = datos_usuario.get("id", "")
+                        pedido_model.registrar_accion_pedido(id_pedido, usuario_id, "Enviado a despacho")  # Adapta según tu modelo
+                        
+                        mensaje = f"Pedido #{id_pedido} enviado a despacho exitosamente"
+                        print(f"Pedido {id_pedido} enviado por bodeguero {datos_usuario.get('nombre')}")
+                    else:
+                        mensaje = f"Error al enviar pedido #{id_pedido}"
+                        
+                except Exception as e:
+                    print(f"Error al procesar envío de pedido: {e}")
+                    mensaje = "Error interno al procesar el pedido"
+            
+            else:
+                mensaje = "Acción no válida"
+            
+            # Redirigir de vuelta a la página de bodeguero con mensaje
+            mensaje_encoded = urllib.parse.quote_plus(mensaje)
+            self.send_response(302)
+            self.send_header("Location", f"/bodeguero?mensaje={mensaje_encoded}")
             self.end_headers()
             return
 

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Bodega - FERREMAS</title>
+    <link rel="stylesheet" href="/static/css/bodeguero.css">
+</head>
+
+<body>
+    <!-- Botón volver -->
+    <button class="btn-back" onclick="history.back()">
+        <span>←</span> Volver
+    </button>
+
+    <div class="bodega-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Gestión de Bodega</h1>
+            <div class="user-info">
+                <span class="user-label">Bodeguero:</span>
+                <span class="user-name">{{usuario_nombre}}</span>
+            </div>
+        </header>
+
+        <!-- Mensaje de estado -->
+        {{mensaje}}
+
+        <!-- Estadísticas rápidas -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-content">
+                    <div class="stat-number" id="pedidos-pendientes">0</div>
+                    <div class="stat-label">Pedidos Pendientes</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🛍️</div>
+                <div class="stat-content">
+                    <div class="stat-number" id="total-productos">0</div>
+                    <div class="stat-label">Productos a Despachar</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-content">
+                    <div class="stat-number" id="total-ventas">$0</div>
+                    <div class="stat-label">Total en Ventas</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección de pedidos pendientes -->
+        <div class="pedidos-section">
+            <div class="section-header">
+                <h2>Pedidos Pendientes de Despacho</h2>
+                <div class="refresh-indicator">
+                    <span class="refresh-text">Actualización automática cada 30s</span>
+                    <div class="refresh-dot"></div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table class="pedidos-table">
+                    <thead>
+                        <tr>
+                            <th>ID Pedido</th>
+                            <th>Cliente</th>
+                            <th>Email</th>
+                            <th>Productos</th>
+                            <th>Total</th>
+                            <th>Fecha</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{pedidos}}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Mensaje cuando no hay pedidos -->
+            <div class="no-pedidos" id="no-pedidos" style="display: none;">
+                <div class="no-pedidos-icon">🎉</div>
+                <h3>¡Excelente trabajo!</h3>
+                <p>No hay pedidos pendientes por despachar en este momento.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Actualizar estadísticas
+        document.addEventListener('DOMContentLoaded', function() {
+            const filas = document.querySelectorAll('.pedidos-table tbody tr');
+            const pedidosPendientes = filas.length;
+            
+            // Contar productos totales y calcular ventas
+            let totalProductos = 0;
+            let totalVentas = 0;
+            
+            filas.forEach(fila => {
+                const productosCell = fila.cells[3];
+                const productos = productosCell.querySelectorAll('li');
+                totalProductos += productos.length;
+                
+                // Extraer el total de la venta
+                const totalCell = fila.cells[4];
+                const totalText = totalCell.textContent.replace(/[^0-9]/g, '');
+                totalVentas += parseInt(totalText) || 0;
+            });
+            
+            // Actualizar estadísticas
+            document.getElementById('pedidos-pendientes').textContent = pedidosPendientes;
+            document.getElementById('total-productos').textContent = totalProductos;
+            document.getElementById('total-ventas').textContent = '$' + totalVentas.toLocaleString();
+            
+            // Mostrar mensaje si no hay pedidos
+            if (pedidosPendientes === 0) {
+                document.querySelector('.table-container').style.display = 'none';
+                document.getElementById('no-pedidos').style.display = 'block';
+            }
+        });
+
+        // Auto-refresh cada 30 segundos para ver nuevos pedidos
+        let refreshInterval;
+        
+        function startAutoRefresh() {
+            refreshInterval = setInterval(function() {
+                location.reload();
+            }, 30000);
+        }
+        
+        // Pausar refresh cuando el usuario interactúa
+        document.addEventListener('click', function() {
+            clearInterval(refreshInterval);
+            setTimeout(startAutoRefresh, 5000); // Reiniciar después de 5 segundos
+        });
+        
+        // Iniciar auto-refresh
+        startAutoRefresh();
+        
+        // Animación del indicador de refresh
+        function animateRefreshDot() {
+            const dot = document.querySelector('.refresh-dot');
+            if (dot) {
+                dot.style.animation = 'pulse 2s infinite';
+            }
+        }
+        
+        animateRefreshDot();
+    </script>
+</body>
+
+</html>
