@@ -7,6 +7,7 @@ import os
 import sqlite3
 import uuid
 import pedido_model
+import time
 
 from model import product_model
 from transbank.webpay.webpay_plus.transaction import Transaction
@@ -25,6 +26,9 @@ PORT = 8000
 
 # Carrito de prueba
 carrito = []
+
+# Inicializar las tablas de pedidos al arrancar el servidor
+pedido_model.inicializar_base_datos()
 
 # Cache para tipos de cambio (evitar múltiples llamadas a la API)
 exchange_rates_cache = {}
@@ -614,16 +618,47 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 return
 
-            # Calcular el total del carrito en CLP (para Webpay)
+            # Verificar que el usuario esté autenticado
+            datos_usuario = self.obtener_datos_sesion()
+            if not datos_usuario:
+                self.send_response(302)
+                self.send_header("Location", "/login")
+                self.end_headers()
+                return
+
+            # Preparar productos del carrito para el pedido
+            productos_carrito = []
             total_clp = 0
+            
             for item in carrito:
                 producto = product_model.obtener_producto_por_codigo(item["codigo"])
                 if producto:
-                    subtotal = producto["valor"] * item["cantidad"]  # Precio original en CLP
+                    subtotal = producto["valor"] * item["cantidad"]
                     total_clp += subtotal
+                    
+                    productos_carrito.append({
+                        'codigo': producto['codigo'],
+                        'nombre': producto['nombre'],
+                        'cantidad': item['cantidad'],
+                        'valor': producto['valor']
+                    })
 
-            # Crear una orden de compra única
-            buy_order = uuid.uuid4().hex[:26]
+            # Crear el pedido en la base de datos
+            id_pedido = pedido_model.crear_pedido(
+                cliente_nombre=datos_usuario.get("name", "Cliente"),
+                cliente_email=datos_usuario.get("email", ""),
+                productos_carrito=productos_carrito,
+                total=total_clp
+            )
+
+            if not id_pedido:
+                self.send_error(500, "Error al crear el pedido")
+                return
+
+            # Crear una orden de compra única que incluya el ID del pedido
+            timestamp = str(int(time.time()))[-8:]  # Últimos 8 dígitos del timestamp
+            random_suffix = uuid.uuid4().hex[:6]    # 6 caracteres aleatorios
+            buy_order = f"P{id_pedido}T{timestamp}R{random_suffix}"
             session_id = str(uuid.uuid4())
             return_url = "http://localhost:8000/confirmacion_pago"
 
@@ -638,6 +673,8 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
             except Exception as e:
                 print("Error al crear transacción:", e)
+                # Si falla el pago, marcar el pedido como cancelado
+                pedido_model.actualizar_estado_pedido(id_pedido, "cancelado")
                 self.send_error(500, "Error al procesar el pago")
             return
         
@@ -656,25 +693,47 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             if tbk_token is None:
                 # Pago aprobado
                 try:
-                    # Extraer ID del pedido de la orden de compra si es posible
-                    if tbk_orden_compra and tbk_orden_compra.startswith("ORDER_"):
-                        id_pedido = tbk_orden_compra.split("_")[1]
-                        # Actualizar estado del pedido a "pagado"
-                        pedido_model.actualizar_estado_pedido(id_pedido, "pagado")
-                        print(f"Pedido {id_pedido} marcado como pagado")
+                    # Extraer ID del pedido de la orden de compra
+                    if tbk_orden_compra and tbk_orden_compra.startswith("P"):
+                        # Extraer ID del pedido del formato P{id_pedido}T{timestamp}R{random}
+                        try:
+                            # Buscar el ID entre 'P' y 'T'
+                            start_idx = tbk_orden_compra.find('P') + 1
+                            end_idx = tbk_orden_compra.find('T')
+                            if start_idx > 0 and end_idx > start_idx:
+                                id_pedido = tbk_orden_compra[start_idx:end_idx]
+                            else:
+                                print(f"No se pudo extraer ID del pedido de: {tbk_orden_compra}")
+                                id_pedido = None
+                        except Exception as e:
+                            print(f"Error al extraer ID del pedido: {e}")
+                            id_pedido = None
+                            # Actualizar estado del pedido a "pagado"
+                            if pedido_model.actualizar_estado_pedido(id_pedido, "pagado"):
+                                print(f"Pedido {id_pedido} marcado como pagado")
+                                # Registrar la acción
+                                pedido_model.registrar_accion_pedido(id_pedido, "sistema", "Pago confirmado")
+                                
+                                # Aquí podrías actualizar el stock de productos si es necesario
+                                # (actualmente el stock se actualiza en el checkout)
+                            else:
+                                print(f"Error al actualizar estado del pedido {id_pedido}")
                 except Exception as e:
                     print(f"Error al actualizar estado del pedido: {e}")
                 
                 carrito.clear()  # Vaciar el carrito
-                mensaje = "<h1>Pago aprobado</h1><p>¡Gracias por tu compra! Tu pedido ha sido registrado correctamente.</p>"
+                mensaje = "<h1>Pago aprobado</h1><p>¡Gracias por tu compra! Tu pedido ha sido registrado correctamente y está siendo procesado por nuestro equipo.</p>"
             else:
                 # Pago cancelado
                 try:
                     # Si el pago fue cancelado, marcar el pedido como cancelado
                     if tbk_orden_compra and tbk_orden_compra.startswith("ORDER_"):
-                        id_pedido = tbk_orden_compra.split("_")[1]
-                        pedido_model.actualizar_estado_pedido(id_pedido, "cancelado")
-                        print(f"Pedido {id_pedido} marcado como cancelado")
+                        parts = tbk_orden_compra.split("_")
+                        if len(parts) >= 2:
+                            id_pedido = parts[1]
+                            pedido_model.actualizar_estado_pedido(id_pedido, "cancelado")
+                            pedido_model.registrar_accion_pedido(id_pedido, "sistema", "Pago cancelado")
+                            print(f"Pedido {id_pedido} marcado como cancelado")
                 except Exception as e:
                     print(f"Error al actualizar estado del pedido cancelado: {e}")
                     
