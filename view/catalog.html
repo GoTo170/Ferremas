@@ -18,6 +18,48 @@
             <h1>Catálogo de Productos</h1>
         </header>
 
+        <!-- Botón hamburguesa -->
+        <button class="menu-toggle" onclick="toggleMenu()">
+            ☰
+        </button>
+
+        <!-- Overlay -->
+        <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+        <!-- Menú deslizable -->
+        <div class="slide-menu" id="slideMenu">
+            <button class="close-btn" onclick="closeMenu()">×</button>
+            
+            <div class="user-info">
+                <div class="user-avatar">👤</div>
+                <div class="user-name">{{usuario_nombre}}</div>
+                <div class="user-email">{{usuario_email}}</div>
+            </div>
+
+            <div class="menu-buttons">
+                <a href="/perfil" class="menu-btn">
+                    <i>👤</i>
+                    <span>Mi Perfil</span>
+                </a>
+                
+                <a href="/mis_pedidos" class="menu-btn">
+                    <i>📦</i>
+                    <span>Mis Pedidos</span>
+                </a>
+                
+                <button onclick="logout()" class="menu-btn logout-btn">
+                    <i>🚪</i>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Selector de moneda -->
+        {{currency_selector}}
+
+        <!-- Mensaje -->
+        {{mensaje}}
+
         <!-- Sección de botones de acción -->
         <div class="action-buttons">
             {{btn_add_product}}
@@ -30,7 +72,51 @@
             {{productos}}
         </main>
     </div>
+
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('slideMenu');
+            const overlay = document.getElementById('menuOverlay');
+            
+            menu.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        function closeMenu() {
+            const menu = document.getElementById('slideMenu');
+            const overlay = document.getElementById('menuOverlay');
+            
+            menu.classList.remove('active');
+            overlay.classList.remove('active');
+        }
+
+        function logout() {
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                // Limpiar cookies
+                document.cookie = "email=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie = "currency=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                
+                // Redirigir al login
+                window.location.href = '/login';
+            }
+        }
+
+        // Función para cambiar moneda (si existe)
+        function changeCurrency() {
+            var select = document.getElementById('currency-select');
+            if (select) {
+                var currency = select.value;
+                window.location.href = '/set_currency?currency=' + currency;
+            }
+        }
+
+        // Cerrar menú con tecla ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeMenu();
+            }
+        });
+    </script>
 </body>
 
 </html>
-

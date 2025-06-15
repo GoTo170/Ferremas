@@ -64,6 +64,190 @@ body {
     background-clip: text;
 }
 
+/* Estilos para el menú hamburguesa */
+.menu-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1001;
+    background: #c0392b;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 55px;
+    height: 55px;
+    cursor: pointer;
+    font-size: 20px;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.menu-toggle:hover {
+    background: #a93226;
+    transform: scale(1.1);
+    box-shadow: var(--shadow-hover);
+}
+
+/* Menú deslizable */
+.slide-menu {
+    position: fixed;
+    top: 0;
+    right: -370px;
+    width: 370px;
+    height: 100vh;
+    background: linear-gradient(135deg, var(--primary-color) 0%, #34495e 100%);
+    box-shadow: -2px 0 20px rgba(0,0,0,0.3);
+    z-index: 1000;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 80px 30px 30px;
+    color: white;
+    backdrop-filter: blur(10px);
+}
+
+.slide-menu.active {
+    right: 0;
+}
+
+.menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(44, 62, 80, 0.6);
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transition: var(--transition);
+    backdrop-filter: blur(2px);
+}
+
+.menu-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Información del usuario */
+.user-info {
+    text-align: center;
+    margin-bottom: 40px;
+    padding-bottom: 25px;
+    border-bottom: 2px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.05);
+    padding: 25px;
+    border-radius: var(--border-radius);
+    margin-bottom: 30px;
+}
+
+.user-avatar {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    font-size: 36px;
+    box-shadow: 0 4px 15px rgba(192, 57, 43, 0.3);
+    border: 3px solid rgba(255,255,255,0.2);
+}
+
+.user-name {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: white;
+}
+
+.user-email {
+    font-size: 14px;
+    opacity: 0.9;
+    color: rgba(255,255,255,0.8);
+    font-weight: 500;
+}
+
+/* Botones del menú */
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.menu-btn {
+    display: flex;
+    align-items: center;
+    padding: 18px 24px;
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: var(--border-radius);
+    color: white;
+    text-decoration: none;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 16px;
+    font-weight: 600;
+    text-align: left;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.menu-btn:hover {
+    background: rgba(255,255,255,0.15);
+    transform: translateX(8px);
+    border-color: rgba(255,255,255,0.3);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.menu-btn i {
+    margin-right: 15px;
+    font-size: 20px;
+    width: 25px;
+    text-align: center;
+}
+
+.logout-btn {
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    border-color: #c0392b;
+    margin-top: 25px;
+    box-shadow: 0 3px 12px rgba(192, 57, 43, 0.3);
+}
+
+.logout-btn:hover {
+    background: linear-gradient(135deg, #a93226, #c0392b);
+    transform: translateX(8px);
+    box-shadow: 0 5px 20px rgba(192, 57, 43, 0.4);
+}
+
+/* Cerrar menú */
+.close-btn {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.2);
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    font-weight: 600;
+}
+
+.close-btn:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.4);
+    transform: rotate(90deg);
+}
+
 /* Selector de Moneda */
 .currency-selector {
     background: var(--card-background);
@@ -361,7 +545,7 @@ body {
     box-shadow: 0 4px 12px rgba(192, 57, 43, 0.4);
 }
 
-/* Responsividad */
+/* Responsividad - Ajustes para el menú */
 @media (max-width: 768px) {
     .container {
         padding: 15px;
@@ -404,6 +588,12 @@ body {
         width: 100%;
         max-width: 300px;
         justify-content: center;
+    }
+
+    /* Menú responsive */
+    .slide-menu {
+        width: 100%;
+        right: -100%;
     }
 }
 

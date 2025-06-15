@@ -218,6 +218,14 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             btn_admin = ""
             btn_bodeguero = ""
 
+            # Reemplazar los datos de usuario en el HTML (este es el cambio importante)
+            if datos_usuario:
+                html = html.replace("{{usuario_nombre}}", datos_usuario.get("name", ""))
+                html = html.replace("{{usuario_email}}", datos_usuario.get("email", ""))
+            else:
+                html = html.replace("{{usuario_nombre}}", "")
+                html = html.replace("{{usuario_email}}", "")
+
             # Obtener mensaje de la URL si existe
             query = urllib.parse.urlparse(self.path).query
             params = urllib.parse.parse_qs(query)
@@ -307,14 +315,12 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             if "{{currency_selector}}" in html:
                 html = html.replace("{{currency_selector}}", currency_selector)
             else:
-                # Si no existe el placeholder, agregarlo después del body
                 html = html.replace("<body>", f"<body>{currency_selector}")
             
             # Agregar el mensaje si existe
             if "{{mensaje}}" in html:
                 html = html.replace("{{mensaje}}", mensaje_html)
             else:
-                # Si no existe el placeholder, agregarlo después del currency selector
                 html = html.replace(currency_selector, f"{currency_selector}{mensaje_html}")
 
             self.send_response(200)
@@ -322,6 +328,7 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(html.encode("utf-8"))
             return
+
         
         elif self.path == "/administracion":
             datos_usuario = self.obtener_datos_sesion()
@@ -788,6 +795,121 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 print(f"Error al cargar formulario agregar producto: {e}")
                 self.send_error(500, "Error interno del servidor")
             return
+        
+        elif self.path == "/perfil":
+            datos_usuario = self.obtener_datos_sesion()
+            if not datos_usuario:
+                self.send_response(303)
+                self.send_header("Location", "/login")
+                self.end_headers()
+                return
+
+            with open("view/mi_perfil.html", "r", encoding="utf-8") as file:
+                html = file.read()
+
+            try:
+                # Obtener todos los pedidos, no solo los pendientes
+                pedidos = pedido_model.obtener_todos_los_pedidos()  # Cambia este método si es necesario
+                
+                # Filtrar pedidos del usuario que están despachados o en despacho
+                pedidos_usuario = [
+                    pedido for pedido in pedidos 
+                    if pedido['cliente_email'] == datos_usuario['email'] and 
+                    pedido['estado'] in ['en_despacho', 'despachado', 'entregado']  # Agregar todos los estados relevantes
+                ]
+
+                if pedidos_usuario:
+                    compras_html = ""
+                    for pedido in pedidos_usuario:
+                        try:
+                            productos = pedido_model.obtener_productos_pedido(pedido['id_pedido'])
+                            
+                            # Determinar clase CSS según el estado
+                            estado_class = "estado-despachado" if pedido['estado'] == 'despachado' else "estado-en-despacho"
+                            estado_texto = {
+                                'en_despacho': 'En Despacho',
+                                'despachado': 'Despachado',
+                                'entregado': 'Entregado'
+                            }.get(pedido['estado'], pedido['estado'].title())
+                            
+                            compras_html += f"""
+                            <div class='pedido-card'>
+                                <div class='pedido-header'>
+                                    <div class='pedido-info'>
+                                        <h3>Pedido #{pedido['id_pedido']}</h3>
+                                        <div class='pedido-fecha'>Fecha: {pedido['fecha_pedido']}</div>
+                                    </div>
+                                    <div class='pedido-estado {estado_class}'>
+                                        {estado_texto}
+                                    </div>
+                                </div>
+                                <div class='productos-pedido'>
+                            """
+                            
+                            total_pedido = 0
+                            for producto in productos:
+                                try:
+                                    producto_info = product_model.obtener_producto_por_codigo(producto['codigo'])
+                                    imagen_url = f"/static/img/{producto_info['imagen']}" if producto_info and producto_info.get('imagen') else "/static/img/default.jpg"
+                                    nombre_producto = producto_info['nombre'] if producto_info else producto.get('nombre', 'Producto no encontrado')
+                                    
+                                    subtotal = float(producto['valor']) * int(producto['cantidad'])
+                                    total_pedido += subtotal
+                                    
+                                    compras_html += f"""
+                                    <div class='producto-comprado'>
+                                        <img src="{imagen_url}" alt="{nombre_producto}" onerror="this.src='/static/img/default.jpg'">
+                                        <div class='producto-info'>
+                                            <p class='producto-nombre'>{nombre_producto}</p>
+                                            <p class='producto-detalle'><i class='fas fa-cube'></i> <strong>Cantidad:</strong> {producto['cantidad']}</p>
+                                            <p class='producto-detalle'><i class='fas fa-tag'></i> <strong>Precio Unitario:</strong> ${int(producto['valor']):,}</p>
+                                            <p class='producto-precio'>${int(subtotal):,}</p>
+                                        </div>
+                                    </div>
+                                    """
+                                except Exception as e:
+                                    print(f"Error al procesar producto {producto.get('codigo', 'unknown')}: {e}")
+                                    continue
+                            
+                            compras_html += f"""
+                                </div>
+                                <div style='text-align: right; margin-top: 15px; padding-top: 15px; border-top: 2px solid var(--border-color);'>
+                                    <h4 style='color: var(--success-color); font-size: 1.3rem;'>Total del Pedido: ${int(total_pedido):,}</h4>
+                                </div>
+                            </div>
+                            """
+                        except Exception as e:
+                            print(f"Error al procesar pedido {pedido['id_pedido']}: {e}")
+                            continue
+                else:
+                    compras_html = """
+                    <div class='no-compras'>
+                        <i class='fas fa-shopping-cart'></i>
+                        <h3>No tienes compras registradas</h3>
+                        <p>Cuando realices tu primera compra, aparecerá aquí tu historial.</p>
+                    </div>
+                    """
+
+            except Exception as e:
+                print(f"Error al obtener compras del usuario: {e}")
+                compras_html = """
+                <div class='no-compras'>
+                    <i class='fas fa-exclamation-triangle'></i>
+                    <h3>Error al cargar compras</h3>
+                    <p>No se pudieron cargar tus compras en este momento. Intenta más tarde.</p>
+                </div>
+                """
+
+            html = html.replace("{{usuario_nombre}}", datos_usuario['name'])
+            html = html.replace("{{usuario_email}}", datos_usuario['email'])
+            html = html.replace("{{compras}}", compras_html)
+
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(html.encode("utf-8"))
+            return
+
 
         elif self.path.startswith("/static/"):
             return http.server.SimpleHTTPRequestHandler.do_GET(self)

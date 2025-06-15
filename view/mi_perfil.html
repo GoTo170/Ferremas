@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - FERREMAS</title>
+    <link rel="stylesheet" href="/static/css/mi_perfil.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <button class="btn-back" onclick="history.back()">
+                <span>←</span> Volver
+            </button>
+            <h1><i class="fas fa-user-circle"></i> Mi Perfil</h1>
+        </div>
+
+        <!-- Información del usuario -->
+        <div class="user-info-card">
+            <div class="user-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="user-details">
+                <h2>Información Personal</h2>
+                <div class="info-item">
+                    <i class="fas fa-user"></i>
+                    <div>
+                        <label>Nombre:</label>
+                        <span>{{usuario_nombre}}</span>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-envelope"></i>
+                    <div>
+                        <label>Correo:</label>
+                        <span>{{usuario_email}}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historial de compras -->
+        <div class="purchase-history">
+            <div class="section-header">
+                <h2><i class="fas fa-shopping-bag"></i> Historial de Compras</h2>
+                <div class="section-subtitle">Productos despachados y en proceso</div>
+            </div>
+            
+            <div class="compras-container">
+                {{compras}}
+            </div>
+        </div>
+    </div>
+</body>
+</html>
