@@ -909,7 +909,86 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(html.encode("utf-8"))
             return
+        
+        elif self.path == "/editar_perfil":
+            datos_usuario = self.obtener_datos_sesion()
+            if not datos_usuario:
+                self.send_response(303)
+                self.send_header("Location", "/login")
+                self.end_headers()
+                return
 
+            with open("view/editar_perfil.html", "r", encoding="utf-8") as file:
+                html = file.read()
+
+            html = html.replace("{{usuario_nombre}}", datos_usuario['name'])
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(html.encode("utf-8"))
+            return
+        
+        elif self.path == "/mis_compras":
+            datos_usuario = self.obtener_datos_sesion()
+            if not datos_usuario:
+                self.send_response(303)
+                self.send_header("Location", "/login")
+                self.end_headers()
+                return
+
+            with open("view/mis_compras.html", "r", encoding="utf-8") as file:
+                html = file.read()
+
+            try:
+                pedidos = pedido_model.obtener_pedidos_pendientes()
+
+                # Filtramos sólo los pedidos de este usuario
+                pedidos_usuario = [
+                    pedido for pedido in pedidos 
+                    if pedido['cliente_email'] == datos_usuario['email']
+                ]
+
+                if pedidos_usuario:
+                    compras_html = ""
+                    for pedido in pedidos_usuario:
+                        productos = pedido_model.obtener_productos_pedido(pedido['id_pedido'])
+                        compras_html += f"<h3>Pedido #{pedido['id_pedido']} - Fecha: {pedido['fecha_pedido']} - Estado: {pedido['estado']}</h3>"
+                        compras_html += "<div class='productos-pedido'>"
+
+                        for producto in productos:
+                            producto_info = product_model.obtener_producto_por_codigo(producto['codigo'])
+                            imagen_url = f"/static/img/{producto_info['imagen']}" if producto_info else ""
+
+                            subtotal = producto['valor'] * producto['cantidad']
+
+                            compras_html += f"""
+                            <div class='producto-comprado'>
+                                <img src="{imagen_url}" alt="{producto['nombre']}">
+                                <div>
+                                    <p><strong>{producto['nombre']}</strong></p>
+                                    <p>Cantidad: {producto['cantidad']}</p>
+                                    <p>Precio Unitario: ${producto['valor']:,.0f}</p>
+                                    <p>Subtotal: ${subtotal:,.0f}</p>
+                                </div>
+                            </div>
+                            """
+                        compras_html += "</div><hr>"
+                else:
+                    compras_html = "<p>Aún no has realizado compras.</p>"
+
+            except Exception as e:
+                print(f"Error al obtener compras del usuario: {e}")
+                compras_html = "<p>Error al cargar tus compras.</p>"
+
+            html = html.replace("{{compras}}", compras_html)
+
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(html.encode("utf-8"))
+            return
+
+        
 
         elif self.path.startswith("/static/"):
             return http.server.SimpleHTTPRequestHandler.do_GET(self)
@@ -1109,6 +1188,37 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header("Location", f"/bodeguero?mensaje={mensaje_encoded}")
             self.end_headers()
             return
+        
+        elif self.path == "/editar_perfil":
+            datos_usuario = self.obtener_datos_sesion()
+            if not datos_usuario:
+                self.send_response(303)
+                self.send_header("Location", "/login")
+                self.end_headers()
+                return
+
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length).decode('utf-8')
+            form = urllib.parse.parse_qs(post_data)
+
+            nuevo_nombre = form.get("nombre", [""])[0].strip()
+
+            if nuevo_nombre:
+                try:
+                    conn = sqlite3.connect("ferremas.db")
+                    cursor = conn.cursor()
+                    cursor.execute("UPDATE usuarios SET name = ? WHERE email = ?", (nuevo_nombre, datos_usuario['email']))
+                    conn.commit()
+                    conn.close()
+                except Exception as e:
+                    print(f"Error al actualizar nombre de usuario: {e}")
+                    # Puedes agregar un mensaje de error si deseas
+            # Siempre redirigimos al perfil después de guardar
+            self.send_response(303)
+            self.send_header("Location", "/perfil")
+            self.end_headers()
+            return
+
 
         elif self.path == "/agregar_producto": 
             # Verificar permisos

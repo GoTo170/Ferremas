@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Perfil - FERREMAS</title>
+    <link rel="stylesheet" href="/static/css/editar_perfil.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Editar Perfil</h1>
+
+        <form method="POST" action="/editar_perfil">
+            <div class="form-group">
+                <label for="nombre">Nombre de usuario:</label>
+                <input type="text" id="nombre" name="nombre" value="{{usuario_nombre}}" required>
+            </div>
+
+            <div class="botones-form">
+                <button type="submit" class="guardar-btn">Guardar Cambios</button>
+                <a href="/perfil"><button type="button" class="cancelar-btn">Cancelar</button></a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

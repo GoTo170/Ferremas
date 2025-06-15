@@ -11,7 +11,7 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <button class="btn-back" onclick="history.back()">
+            <button class="btn-back" onclick="window.location.href='/catalog'">
                 <span>←</span> Volver
             </button>
             <h1><i class="fas fa-user-circle"></i> Mi Perfil</h1>
@@ -38,6 +38,12 @@
                         <span>{{usuario_email}}</span>
                     </div>
                 </div>
+            </div>
+
+            <div class="editar-perfil-btn">
+                <a href="/editar_perfil">
+                    <button>Editar Perfil</button>
+                </a>
             </div>
         </div>
 

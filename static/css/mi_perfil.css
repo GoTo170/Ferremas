@@ -112,6 +112,7 @@ body {
     align-items: center;
     gap: 30px;
     transition: var(--transition);
+    position: relative;
 }
 
 .user-info-card:hover {
@@ -184,6 +185,72 @@ body {
     font-size: 16px;
     color: var(--text-color);
     font-weight: 500;
+}
+
+/* Botón editar perfil */
+.editar-perfil-btn {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+}
+
+.editar-perfil-btn a {
+    text-decoration: none;
+}
+
+.editar-perfil-btn button {
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 15px;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 15px rgba(192, 57, 43, 0.3);
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.editar-perfil-btn button::before {
+    content: '\f044';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    font-size: 16px;
+}
+
+.editar-perfil-btn button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(192, 57, 43, 0.4);
+    background: linear-gradient(135deg, #a93226, #c0392b);
+}
+
+.editar-perfil-btn button:active {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(192, 57, 43, 0.3);
+}
+
+.editar-perfil-btn button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.editar-perfil-btn button:hover::after {
+    width: 300px;
+    height: 300px;
 }
 
 /* Sección de historial de compras */
@@ -425,6 +492,16 @@ hr {
         gap: 20px;
     }
     
+    .editar-perfil-btn {
+        margin-left: 0;
+        margin-top: 10px;
+    }
+    
+    .editar-perfil-btn button {
+        width: 100%;
+        justify-content: center;
+    }
+    
     .user-avatar {
         width: 100px;
         height: 100px;
@@ -474,6 +551,11 @@ hr {
     .btn-back {
         padding: 10px 16px;
         font-size: 13px;
+    }
+    
+    .editar-perfil-btn button {
+        padding: 12px 20px;
+        font-size: 14px;
     }
 }
 
