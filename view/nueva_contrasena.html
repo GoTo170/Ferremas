@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nueva Contraseña - FERREMAS</title>
+    <link rel="stylesheet" href="/static/css/nueva_contrasena.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Nueva Contraseña</h1>
+        </div>
+
+        <div class="intro-text">
+            <p>En este formulario deberás ingresar la nueva contraseña que desees teniendo en cuenta los parámetros de 8 caracteres como mínimo, una mayúscula, un número y un carácter especial.</p>
+        </div>
+
+        {{mensaje}}
+
+        <div class="form-container">
+            <form method="POST" action="/nueva_contrasena">
+                <div class="form-group">
+                    <label for="password">Nueva contraseña:</label>
+                    <input type="password" id="password" name="password" required
+                    pattern="(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}"
+                    title="Debe contener mínimo 8 caracteres, una mayúscula, un número y un carácter especial">
+                    <div class="password-requirements">
+                        <small>Requisitos: 8+ caracteres, 1 mayúscula, 1 número, 1 carácter especial</small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm_password">Confirmar contraseña:</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required>
+                </div>
+
+                <div class="botones-form">
+                    <a href="/login"><button type="button" class="cancelar-btn">Cancelar</button></a>
+                    <button type="submit" class="guardar-btn">Cambiar Contraseña</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

@@ -987,8 +987,17 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(html.encode("utf-8"))
             return
-
         
+        elif self.path == "/cambiar_contrasena":
+            with open("view/cambiar_contrasena.html", "r", encoding="utf-8") as file:
+                html = file.read()
+            html = html.replace("{{mensaje}}", "")
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(html.encode("utf-8"))
+            return
+
 
         elif self.path.startswith("/static/"):
             return http.server.SimpleHTTPRequestHandler.do_GET(self)
@@ -1218,6 +1227,81 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header("Location", "/perfil")
             self.end_headers()
             return
+        
+        elif self.path == "/nueva_contrasena":
+            datos_usuario = self.obtener_datos_sesion()
+            if not datos_usuario:
+                self.send_response(303)
+                self.send_header("Location", "/login")
+                self.end_headers()
+                return
+
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length).decode('utf-8')
+            form = urllib.parse.parse_qs(post_data)
+
+            password = form.get("password", [""])[0].strip()
+            confirm_password = form.get("confirm_password", [""])[0].strip()
+
+            if password != confirm_password:
+                with open("view/nueva_contrasena.html", "r", encoding="utf-8") as file:
+                    html = file.read()
+                html = html.replace("{{mensaje}}", "<div class='mensaje-error'>Las contraseñas no coinciden, intente nuevamente.</div>")
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                self.wfile.write(html.encode("utf-8"))
+                return
+
+            # Si las contraseñas coinciden, actualizamos en la DB
+            try:
+                conn = sqlite3.connect("ferremas.db")
+                cursor = conn.cursor()
+                cursor.execute("UPDATE usuarios SET password = ? WHERE email = ?", (password, datos_usuario['email']))
+                conn.commit()
+                conn.close()
+            except Exception as e:
+                print(f"Error al actualizar contraseña: {e}")
+
+            self.send_response(303)
+            self.send_header("Location", "/login")
+            self.end_headers()
+            return
+
+        
+        elif self.path == "/cambiar_contrasena":
+            datos_usuario = self.obtener_datos_sesion()
+            if not datos_usuario:
+                self.send_response(303)
+                self.send_header("Location", "/login")
+                self.end_headers()
+                return
+
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length).decode('utf-8')
+            form = urllib.parse.parse_qs(post_data)
+
+            email_ingresado = form.get("email", [""])[0].strip()
+
+            if email_ingresado != datos_usuario['email']:
+                with open("view/cambiar_contrasena.html", "r", encoding="utf-8") as file:
+                    html = file.read()
+                html = html.replace("{{mensaje}}", "<div class='mensaje-error'>El correo ingresado no es correcto, inténtelo nuevamente.</div>")
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                self.wfile.write(html.encode("utf-8"))
+                return
+            else:
+                # Pasamos al formulario de nueva contraseña
+                with open("view/nueva_contrasena.html", "r", encoding="utf-8") as file:
+                    html = file.read()
+                html = html.replace("{{mensaje}}", "")
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                self.wfile.write(html.encode("utf-8"))
+                return
 
 
         elif self.path == "/agregar_producto": 

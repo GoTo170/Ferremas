@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cambiar Contraseña - FERREMAS</title>
+    <link rel="stylesheet" href="/static/css/cambiar_contrasena.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Verificación de Cuenta</h1>
+        </div>
+
+        <div class="intro-text">
+            <p>En este formulario deberás validar tu identidad ingresando el mismo correo de usuario actual para proceder con el cambio de contraseña.</p>
+        </div>
+
+        {{mensaje}}
+
+        <div class="form-container">
+            <form method="POST" action="/cambiar_contrasena">
+                <div class="form-group">
+                    <label for="email">Confirma tu correo electrónico:</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+
+                <div class="botones-form">
+                    <a href="/login"><button type="button" class="cancelar-btn">Cancelar</button></a>
+                    <button type="submit" class="siguiente-btn">Siguiente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
