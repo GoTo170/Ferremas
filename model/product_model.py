@@ -52,5 +52,3 @@ def actualizar_stock(codigo, cantidad):
 
     conn.close()
     return False
-
-

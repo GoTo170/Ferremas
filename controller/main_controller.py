@@ -8,4 +8,3 @@ def login_controller(params):
         return ("200 OK", "view/catalog.html")
     else:
         return ("401 Unauthorized", "view/login.html")
-

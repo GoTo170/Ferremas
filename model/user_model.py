@@ -7,5 +7,3 @@ def verificar_usuario(name, email, password):
     usuario = cursor.fetchone()
     conn.close()
     return usuario is not None
-
-

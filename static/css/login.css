@@ -129,7 +129,8 @@ label {
 
 /* Inputs */
 input[type="email"],
-input[type="password"] {
+input[type="password"],
+input[type="text"] {
     width: 100%;
     padding: 15px;
     border: 2px solid var(--border-color);
@@ -140,7 +141,8 @@ input[type="password"] {
 }
 
 input[type="email"]:focus,
-input[type="password"]:focus {
+input[type="password"]:focus,
+input[type="text"]:focus {
     outline: none;
     border-color: var(--secondary-color);
     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
@@ -149,9 +151,47 @@ input[type="password"]:focus {
 }
 
 input[type="email"]:hover,
-input[type="password"]:hover {
+input[type="password"]:hover,
+input[type="text"]:hover {
     border-color: var(--secondary-color);
     background: white;
+}
+
+/* Estilos para el toggle de contraseña */
+.password-container {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: var(--text-muted);
+    user-select: none;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    transition: var(--transition);
+}
+
+.password-toggle:hover {
+    color: var(--secondary-color);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.password-toggle svg {
+    transition: var(--transition);
+}
+
+/* Ajustar padding del input para hacer espacio al icono */
+.input-group input[type="password"],
+.input-group input[type="text"] {
+    padding-right: 50px;
 }
 
 /* Botones */
@@ -250,6 +290,25 @@ button:hover {
     z-index: 1;
 }
 
+/* Campo de entrada con icono (opcional para futuras mejoras) */
+.input-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.input-group input {
+    padding-left: 45px;
+}
+
+.input-group .icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 1.1rem;
+}
+
 /* Responsividad */
 @media (max-width: 768px) {
     .login-container {
@@ -270,8 +329,20 @@ button:hover {
     }
     
     input[type="email"],
-    input[type="password"] {
+    input[type="password"],
+    input[type="text"] {
         padding: 12px;
+    }
+    
+    .input-group input[type="password"],
+    .input-group input[type="text"] {
+        padding-right: 45px;
+    }
+    
+    .password-toggle {
+        right: 12px;
+        width: 20px;
+        height: 20px;
     }
     
     button {
@@ -317,23 +388,4 @@ button:hover {
 /* Efectos adicionales */
 .login-container:hover {
     box-shadow: var(--shadow-hover);
-}
-
-/* Campo de entrada con icono (opcional para futuras mejoras) */
-.input-group {
-    position: relative;
-    margin-bottom: 20px;
-}
-
-.input-group input {
-    padding-left: 45px;
-}
-
-.input-group .icon {
-    position: absolute;
-    left: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
-    font-size: 1.1rem;
 }
