@@ -1,0 +1,328 @@
+/* Variables CSS para consistencia con el resto de la aplicación */
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #3498db;
+    --accent-color: #c0392b;
+    --success-color: #27ae60;
+    --warning-color: #f39c12;
+    --error-color: #e74c3c;
+    --background-color: #f8f9fa;
+    --card-background: #ffffff;
+    --text-color: #2c3e50;
+    --text-muted: #6c757d;
+    --border-color: #e9ecef;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.15);
+    --border-radius: 12px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Reset y estilos base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, var(--background-color) 0%, #e8f4fd 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.6;
+    color: var(--text-color);
+    position: relative;
+    padding: 20px;
+}
+
+/* Container principal */
+.container {
+    background: var(--card-background);
+    padding: 40px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-hover);
+    min-width: 500px;
+    max-width: 600px;
+    width: 90%;
+    position: relative;
+    animation: fadeInUp 0.6s ease-out;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Decoración superior del card */
+.container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, var(--accent-color), var(--primary-color));
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+/* Botón volver */
+.container > button {
+    position: absolute;
+    top: -15px;
+    left: 30px;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(192, 57, 43, 0.3);
+    z-index: 100;
+}
+
+.container > button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(192, 57, 43, 0.4);
+    background: #a93226;
+}
+
+/* Título principal */
+h1 {
+    color: var(--primary-color);
+    font-size: 2.4rem;
+    font-weight: 700;
+    text-align: center;
+    margin: 20px 0 30px 0;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Total del pedido */
+p {
+    background: linear-gradient(135deg, #e8f8f5, #d5f4e6);
+    border: 2px solid var(--success-color);
+    border-left: 6px solid var(--success-color);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 25px 0 35px 0;
+    text-align: center;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--success-color);
+    box-shadow: 0 3px 15px rgba(39, 174, 96, 0.1);
+    animation: pulse 2s infinite;
+}
+
+/* Formularios */
+form {
+    margin-bottom: 20px;
+}
+
+/* Botones de pago */
+button[type="submit"] {
+    width: 100%;
+    padding: 18px 30px;
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.2rem;
+    transition: var(--transition);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+/* Botón Webpay */
+button[type="submit"]:first-of-type {
+    background: linear-gradient(135deg, var(--secondary-color), #2980b9);
+    color: white;
+    box-shadow: 0 4px 20px rgba(52, 152, 219, 0.3);
+}
+
+button[type="submit"]:first-of-type:hover {
+    background: linear-gradient(135deg, #2980b9, #1f618d);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(52, 152, 219, 0.4);
+}
+
+button[type="submit"]:first-of-type::before {
+    content: '💳';
+    font-size: 1.3rem;
+}
+
+/* Botón Transferencia */
+button[type="submit"]:last-of-type {
+    background: linear-gradient(135deg, var(--warning-color), #e67e22);
+    color: white;
+    box-shadow: 0 4px 20px rgba(243, 156, 18, 0.3);
+}
+
+button[type="submit"]:last-of-type:hover {
+    background: linear-gradient(135deg, #e67e22, #d68910);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(243, 156, 18, 0.4);
+}
+
+button[type="submit"]:last-of-type::before {
+    content: '🏦';
+    font-size: 1.3rem;
+}
+
+/* Efecto de ondas en los botones */
+button[type="submit"]::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+button[type="submit"]:active::after {
+    width: 300px;
+    height: 300px;
+}
+
+/* Separador visual entre botones */
+form:first-of-type::after {
+    content: 'O';
+    display: block;
+    text-align: center;
+    margin: 25px 0;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 1.1rem;
+    position: relative;
+}
+
+form:first-of-type::after {
+    background: var(--card-background);
+    padding: 0 20px;
+    position: relative;
+    z-index: 1;
+}
+
+form:first-of-type {
+    position: relative;
+}
+
+form:first-of-type::before {
+    content: '';
+    position: absolute;
+    bottom: -12px;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+    .container {
+        min-width: 320px;
+        padding: 30px 25px;
+        margin: 15px;
+    }
+    
+    .container > button {
+        top: -12px;
+        left: 20px;
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+    
+    h1 {
+        font-size: 2rem;
+        margin: 15px 0 25px 0;
+    }
+    
+    p {
+        font-size: 1.1rem;
+        padding: 15px;
+        margin: 20px 0 25px 0;
+    }
+    
+    button[type="submit"] {
+        padding: 15px 25px;
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        min-width: 280px;
+        padding: 25px 20px;
+    }
+    
+    h1 {
+        font-size: 1.7rem;
+    }
+    
+    p {
+        font-size: 1rem;
+    }
+    
+    button[type="submit"] {
+        padding: 14px 20px;
+        font-size: 1rem;
+    }
+}
+
+/* Animaciones */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+/* Efectos adicionales */
+.container:hover {
+    box-shadow: var(--shadow-hover);
+}
+
+/* Estados de loading para botones (opcional para futuras mejoras) */
+button[type="submit"].loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+button[type="submit"].loading::before {
+    content: '⏳';
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}

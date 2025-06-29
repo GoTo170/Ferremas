@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Panel Contador - FERREMAS</title>
+    <link rel="stylesheet" href="/static/css/contador.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Botón volver -->
+        <button class="btn-back" onclick="window.location.href='/catalog'">
+            <span>←</span> Volver
+        </button>
+        <h1>Panel del Contador</h1>
+
+        <h2>Confirmar Pagos por Transferencia</h2>
+        {{pagos_transferencia}}
+
+        <h2>Registrar Entrega de Productos</h2>
+        {{entregas_pendientes}}
+    </div>
+</body>
+
+</html>

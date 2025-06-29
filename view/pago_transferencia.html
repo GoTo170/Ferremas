@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Pago por Transferencia - FERREMAS</title>
+    <link rel="stylesheet" href="/static/css/pago_transferencia.css">
+    <script>
+        function validarFormulario(event) {
+            const montoInput = document.getElementById('monto');
+            const monto = parseInt(montoInput.value);
+            const precioReal = parseInt(document.getElementById('precio_real').value);
+
+            if (isNaN(monto)) {
+                alert("Por favor ingresa un monto válido.");
+                event.preventDefault();
+                return false;
+            }
+
+            if (monto < precioReal) {
+                alert("El monto seleccionado no cubre los gastos del producto.");
+                event.preventDefault();
+                return false;
+            }
+
+            return true;
+        }
+
+        function confirmarCancelar() {
+            if (confirm("¿Estás seguro de que deseas cancelar la compra?")) {
+                window.location.href = "/cart";
+            }
+        }
+
+        function changeCurrency() {
+            const select = document.getElementById('currency-select');
+            if (select) {
+                const currency = select.value;
+                window.location.href = '/set_currency?currency=' + currency;
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Pago por Transferencia</h1>
+
+        <!-- Selector de moneda -->
+        {{currency_selector}}
+
+        <section class="resumen-producto">
+            <h2>Resumen del Pedido</h2>
+            <p><strong>Producto:</strong> {{nombre_producto}}</p>
+            <p><strong>Cantidad:</strong> {{cantidad}}</p>
+            <p><strong>Total a Pagar:</strong> {{monto_formateado}}</p>
+        </section>
+
+        <section class="datos-destinatario">
+            <h2>Datos para Transferencia</h2>
+            <p><strong>Banco:</strong> Banco Estado</p>
+            <p><strong>Nombre:</strong> Ferremas S.A.</p>
+            <p><strong>RUT:</strong> 76.543.210-1</p>
+            <p><strong>Cuenta Corriente:</strong> 1234567890</p>
+            <p><strong>Correo:</strong> pagos@ferremas.cl</p>
+        </section>
+
+        <section class="formulario-pago">
+            <h2>Datos del Pago</h2>
+            <form method="POST" action="/confirmar_transferencia_pago" onsubmit="return validarFormulario(event)">
+                <input type="hidden" name="id_pedido" value="{{id_pedido}}">
+                <input type="hidden" id="precio_real" value="{{monto_clp}}">
+
+                <label for="tarjeta">Número de Tarjeta (16 dígitos):</label><br>
+                <input type="text" name="tarjeta" pattern="\d{16}" maxlength="16" required><br><br>
+
+                <label for="monto">Monto a Pagar:</label><br>
+                <input type="number" name="monto" id="monto" placeholder="Ej: 12000" required><br><br>
+
+                <label for="mensaje">Mensaje:</label><br>
+                <textarea name="mensaje" rows="4" cols="50" placeholder="Escriba un mensaje opcional..."></textarea><br><br>
+
+                <button type="submit">Pagar</button>
+                <button type="button" onclick="confirmarCancelar()">Cancelar Compra</button>
+            </form>
+        </section>
+    </div>
+</body>
+</html>

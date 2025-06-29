@@ -3,14 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <title>Checkout - FERREMAS</title>
-    <link rel="stylesheet" href="../static/css/style.css">
-    <button onclick="history.back()">⬅ Volver</button>
+    <link rel="stylesheet" href="/static/css/checkout.css">
 </head>
 <body>
-    <h1>Proceso de Pago</h1>
-    <form method="GET" action="/checkout">
-        <button type="submit">Pagar con Webpay</button>
-    </form>
+    <div class="container">
+        <button onclick="history.back()">⬅ Volver</button>
+        <h1>Selecciona el Método de Pago</h1>
+
+        <p><strong>Total:</strong> {{total_formateado}}</p>
+
+        <form method="POST" action="/pago_webpay">
+            <input type="hidden" name="id_pedido" value="{{id_pedido}}">
+            <button type="submit">Pagar con Webpay</button>
+        </form>
+
+        <form method="POST" action="/pago_transferencia">
+            <input type="hidden" name="id_pedido" value="{{id_pedido}}">
+            <button type="submit">Transferencia Bancaria</button>
+        </form>
+    </div>
 </body>
 </html>
+
 

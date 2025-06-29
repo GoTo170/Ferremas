@@ -80,6 +80,26 @@ def crear_pedido(cliente_nombre, cliente_email, productos_carrito, total):
     finally:
         conn.close()
 
+def obtener_pedidos_por_estado(estado):
+    conn = sqlite3.connect("ferremas.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM pedidos WHERE estado = ?", (estado,))
+    filas = cursor.fetchall()
+    conn.close()
+
+    pedidos = []
+    for fila in filas:
+        pedidos.append({
+            "id_pedido": fila[0],
+            "cliente_nombre": fila[1],
+            "cliente_email": fila[2],
+            "total": fila[3],
+            "estado": fila[4],
+            "fecha_pedido": fila[5]
+        })
+    return pedidos
+
+
 def obtener_pedidos_pendientes():
     """Obtiene todos los pedidos pendientes o pagados"""
     try:

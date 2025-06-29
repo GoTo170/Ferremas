@@ -1,81 +1,403 @@
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f2f2f2;
+/* Variables CSS para consistencia con el resto de la aplicación */
+:root {
+    --primary-color: #2c3e50;
+    --secondary-color: #3498db;
+    --accent-color: #c0392b;
+    --success-color: #27ae60;
+    --warning-color: #f39c12;
+    --error-color: #e74c3c;
+    --background-color: #f8f9fa;
+    --card-background: #ffffff;
+    --text-color: #2c3e50;
+    --text-muted: #6c757d;
+    --border-color: #e9ecef;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.15);
+    --border-radius: 12px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Reset y estilos base */
+* {
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    line-height: 1.6;
+    color: var(--text-color);
+    background: var(--background-color);
+    padding: 20px;
 }
 
-h1 {
-    color: #2c3e50;
-    margin-bottom: 20px;
-}
-
-form {
-    background-color: #ffffff;
-    padding: 30px 40px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    min-width: 300px;
-}
-
-label {
-    font-weight: bold;
-    display: block;
-    margin-bottom: 5px;
-    color: #444;
-}
-
-input[type="text"],
-input[type="email"],
-input[type="password"] {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-.registro-btn {
-    background-color: #27ae60;
+/* Botón volver */
+.btn-back {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    background: var(--accent-color);
     color: white;
     border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
+    padding: 12px 20px;
+    border-radius: 8px;
     cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 8px rgba(192, 57, 43, 0.3);
+    text-decoration: none;
+    z-index: 100;
+}
+
+.btn-back:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(192, 57, 43, 0.4);
+    background: #a93226;
+}
+
+.btn-back span {
+    font-size: 16px;
     font-weight: bold;
-    transition: background-color 0.3s ease;
-    display: block;
-    margin: 0 auto;
+}
+
+/* Container principal del registro */
+.register-container {
+    background: var(--card-background);
+    padding: 40px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-hover);
+    min-width: 450px;
+    max-width: 500px;
+    width: 90%;
+    position: relative;
+    animation: fadeInUp 0.6s ease-out;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Decoración superior del card */
+.register-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, var(--accent-color), var(--primary-color));
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+}
+
+/* Título */
+h1 {
+    color: var(--primary-color);
+    font-size: 2.2rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 30px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Formulario */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    border: 2px solid #e74c3c;
+    padding: 25px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+}
+
+/* Labels */
+label {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 5px;
+    font-size: 1rem;
+}
+
+/* Inputs */
+input[type="email"],
+input[type="password"],
+input[type="text"] {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: var(--transition);
+    background: #fafbfc;
+    margin-bottom: 15px;
+}
+
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="text"]:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    background: white;
+    transform: translateY(-1px);
+}
+
+input[type="email"]:hover,
+input[type="password"]:hover,
+input[type="text"]:hover {
+    border-color: var(--secondary-color);
+    background: white;
+}
+
+/* Botones */
+.registro-btn {
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: var(--transition);
+    box-shadow: 0 3px 15px rgba(192, 57, 43, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 .registro-btn:hover {
-    background-color: #2ecc71;
+    background: #a93226;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(192, 57, 43, 0.4);
 }
 
 .cancelar-btn {
-    background-color: #e74c3c;
+    background: var(--text-muted);
     color: white;
     border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
+    padding: 15px 30px;
+    border-radius: 8px;
     cursor: pointer;
-    font-weight: bold;
-    transition: background-color 0.3s ease;
-    display: block;
-    margin: 10px auto 0 auto;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: var(--transition);
+    box-shadow: 0 3px 15px rgba(108, 117, 125, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .cancelar-btn:hover {
-    background-color: #c0392b;
+    background: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
 }
 
+/* Mensajes de error */
 #mensaje-error {
-    color: red;
-    margin-bottom: 10px;
-    font-weight: bold;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-weight: 600;
+    text-align: center;
+    animation: slideDown 0.4s ease-out;
+    background: linear-gradient(135deg, #fadbd8, #f2d7d5);
+    color: var(--error-color);
+    border: 1px solid var(--error-color);
+    border-left: 4px solid var(--error-color);
+    display: none; /* Se mostrará cuando haya contenido */
+}
+
+#mensaje-error:not(:empty) {
+    display: block;
+}
+
+/* Estilos para el toggle de contraseña */
+.password-container {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: var(--text-muted);
+    user-select: none;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    transition: var(--transition);
+}
+
+.password-toggle:hover {
+    color: var(--secondary-color);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.password-toggle svg {
+    transition: var(--transition);
+}
+
+/* Ajustar padding del input para hacer espacio al icono */
+.input-group input[type="password"],
+.input-group input[type="text"] {
+    padding-right: 50px;
+}
+
+/* Información de ayuda para contraseña */
+.password-help {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: -10px;
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border-left: 3px solid var(--accent-color);
+}
+
+/* Contenedor de botones */
+.button-group {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.button-group button {
+    flex: 1;
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+    .register-container {
+        min-width: 320px;
+        padding: 30px 25px;
+        margin: 20px;
+    }
+    
+    .btn-back {
+        top: 20px;
+        left: 20px;
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+    
+    h1 {
+        font-size: 1.8rem;
+    }
+    
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+        padding: 12px;
+    }
+    
+    .registro-btn,
+    .cancelar-btn {
+        padding: 14px 25px;
+        font-size: 1rem;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .register-container {
+        min-width: 280px;
+        padding: 25px 20px;
+    }
+    
+    h1 {
+        font-size: 1.6rem;
+    }
+    
+    form {
+        padding: 20px;
+    }
+}
+
+/* Animaciones */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Efectos adicionales */
+.register-container:hover {
+    box-shadow: var(--shadow-hover);
+}
+
+/* Validación visual */
+input:valid {
+    border-color: var(--success-color);
+}
+
+input:invalid:not(:focus):not(:placeholder-shown) {
+    border-color: var(--error-color);
+}
+
+/* Indicador de fuerza de contraseña */
+.password-strength {
+    height: 4px;
+    background: var(--border-color);
+    border-radius: 2px;
+    margin-top: 5px;
+    overflow: hidden;
+}
+
+.password-strength-bar {
+    height: 100%;
+    width: 0%;
+    transition: var(--transition);
+    border-radius: 2px;
+}
+
+.strength-weak {
+    background: var(--error-color);
+    width: 33%;
+}
+
+.strength-medium {
+    background: var(--warning-color);
+    width: 66%;
+}
+
+.strength-strong {
+    background: var(--success-color);
+    width: 100%;
 }

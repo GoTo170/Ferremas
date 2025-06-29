@@ -36,6 +36,8 @@ usuarios = [
     ("Maximiliano", "vendedor2@gmail.com", "Vendedor.02", "vendedor"),
     ("Javier", "bodeguero1@gmail.com", "Bodeguero.01", "bodeguero"),
     ("Gianinna", "bodeguero2@gmail.com", "Bodeguero.02", "bodeguero"),
+    ("Carlos", "contador1@gmail.com", "Contador.01", "contador"),
+    ("Marcela", "contador2@gmail.com", "Contador.02", "contador")
 ]
 
 cursor.executemany("""

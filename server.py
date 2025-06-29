@@ -217,6 +217,8 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             btn_add_product = ""
             btn_admin = ""
             btn_bodeguero = ""
+            btn_contador = ""
+
 
             # Reemplazar los datos de usuario en el HTML (este es el cambio importante)
             if datos_usuario:
@@ -282,6 +284,15 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                         </a>
                     </div>
                     '''
+                if rol in ["administrador", "contador"]:
+                    btn_contador = '''
+                    <div id="contador-button">
+                        <a href="/contador">
+                            <button>Panel Contador</button>
+                        </a>
+                    </div>
+                    '''
+
             else:
                 print("No se encontraron datos de sesión. El usuario no está autenticado.")
 
@@ -310,6 +321,7 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             html = html.replace("{{btn_add_product}}", btn_add_product)
             html = html.replace("{{btn_admin}}", btn_admin)
             html = html.replace("{{btn_bodeguero}}", btn_bodeguero)
+            html = html.replace("{{btn_contador}}", btn_contador)
             
             # Insertar selector de moneda (buscar un lugar apropiado en el HTML)
             if "{{currency_selector}}" in html:
@@ -636,19 +648,23 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             # Preparar productos del carrito para el pedido
             productos_carrito = []
             total_clp = 0
-            
+
             for item in carrito:
                 producto = product_model.obtener_producto_por_codigo(item["codigo"])
                 if producto:
                     subtotal = producto["valor"] * item["cantidad"]
                     total_clp += subtotal
-                    
+
                     productos_carrito.append({
                         'codigo': producto['codigo'],
                         'nombre': producto['nombre'],
                         'cantidad': item['cantidad'],
                         'valor': producto['valor']
                     })
+
+            # Descontar stock
+            for item in carrito:
+                product_model.actualizar_stock(item["codigo"], item["cantidad"])
 
             # Crear el pedido en la base de datos
             id_pedido = pedido_model.crear_pedido(
@@ -662,28 +678,23 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_error(500, "Error al crear el pedido")
                 return
 
-            # Crear una orden de compra única que incluya el ID del pedido
-            timestamp = str(int(time.time()))[-8:]  # Últimos 8 dígitos del timestamp
-            random_suffix = uuid.uuid4().hex[:6]    # 6 caracteres aleatorios
-            buy_order = f"P{id_pedido}T{timestamp}R{random_suffix}"
-            session_id = str(uuid.uuid4())
-            return_url = "http://localhost:8000/confirmacion_pago"
-
+            # Mostrar vista con elección de método de pago
             try:
-                # Crear la transacción (siempre en CLP para Webpay)
-                tx = Transaction(webpay_options)
-                response = tx.create(buy_order, session_id, total_clp, return_url)
+                with open("view/checkout.html", "r", encoding="utf-8") as file:
+                    html = file.read()
 
-                # Redirigir al usuario al formulario de pago de Webpay
-                self.send_response(302)
-                self.send_header("Location", response['url'] + "?token_ws=" + response['token'])
+                html = html.replace("{{id_pedido}}", str(id_pedido))
+                html = html.replace("{{total_formateado}}", self.format_currency(total_clp, "CLP"))
+
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
                 self.end_headers()
+                self.wfile.write(html.encode("utf-8"))
             except Exception as e:
-                print("Error al crear transacción:", e)
-                # Si falla el pago, marcar el pedido como cancelado
-                pedido_model.actualizar_estado_pedido(id_pedido, "cancelado")
-                self.send_error(500, "Error al procesar el pago")
+                print("Error al mostrar vista de método de pago:", e)
+                self.send_error(500, "No se pudo mostrar el método de pago")
             return
+
         
         elif self.path.startswith("/confirmacion_pago"):
             parsed_url = urllib.parse.urlparse(self.path)
@@ -795,6 +806,65 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 print(f"Error al cargar formulario agregar producto: {e}")
                 self.send_error(500, "Error interno del servidor")
             return
+        
+        elif self.path == "/contador":
+            datos_usuario = self.obtener_datos_sesion()
+            if not datos_usuario or datos_usuario.get("rol") != "contador":
+                self.send_response(303)
+                self.send_header("Location", "/login")
+                self.end_headers()
+                return
+
+            with open("view/contador.html", "r", encoding="utf-8") as file:
+                html = file.read()
+
+            # Obtener pagos pendientes por transferencia
+            pagos = pedido_model.obtener_pedidos_por_estado("transferencia_pendiente")
+            pagos_html = "<table><tr><th>ID Pedido</th><th>Cliente</th><th>Monto</th><th>Acción</th></tr>"
+            for p in pagos:
+                pagos_html += f"""
+                    <tr>
+                        <td>{p['id_pedido']}</td>
+                        <td>{p['cliente_nombre']}</td>
+                        <td>${p['total']:,.0f}</td>
+                        <td>
+                            <form method='POST' action='/confirmar_transferencia'>
+                                <input type='hidden' name='id_pedido' value='{p['id_pedido']}'>
+                                <button type='submit'>Confirmar</button>
+                            </form>
+                        </td>
+                    </tr>
+                """
+            pagos_html += "</table>" if pagos else "<p>No hay pagos pendientes.</p>"
+
+            # Obtener pedidos pagados pero no entregados
+            entregas = pedido_model.obtener_pedidos_por_estado("pagado")
+            entregas_html = "<table><tr><th>ID Pedido</th><th>Cliente</th><th>Monto</th><th>Acción</th></tr>"
+            for e in entregas:
+                entregas_html += f"""
+                    <tr>
+                        <td>{e['id_pedido']}</td>
+                        <td>{e['cliente_nombre']}</td>
+                        <td>${e['total']:,.0f}</td>
+                        <td>
+                            <form method='POST' action='/registrar_entrega'>
+                                <input type='hidden' name='id_pedido' value='{e['id_pedido']}'>
+                                <button type='submit'>Registrar Entrega</button>
+                            </form>
+                        </td>
+                    </tr>
+                """
+            entregas_html += "</table>" if entregas else "<p>No hay entregas pendientes.</p>"
+
+            html = html.replace("{{pagos_transferencia}}", pagos_html)
+            html = html.replace("{{entregas_pendientes}}", entregas_html)
+
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(html.encode("utf-8"))
+            return
+
         
         elif self.path == "/perfil":
             datos_usuario = self.obtener_datos_sesion()
@@ -1267,8 +1337,166 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header("Location", "/login")
             self.end_headers()
             return
-
         
+        elif self.path == "/confirmar_transferencia":
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length).decode('utf-8')
+            fields = urllib.parse.parse_qs(post_data)
+            id_pedido = fields.get("id_pedido", [None])[0]
+
+            if id_pedido:
+                pedido_model.actualizar_estado_pedido(id_pedido, "pagado")
+                pedido_model.registrar_accion_pedido(id_pedido, "contador", "Pago confirmado por transferencia")
+
+            self.send_response(303)
+            self.send_header("Location", "/contador")
+            self.end_headers()
+            return
+        
+        elif self.path == "/pago_transferencia":
+            post_data = self.rfile.read(int(self.headers['Content-Length'])).decode("utf-8")
+            fields = urllib.parse.parse_qs(post_data)
+            id_pedido = fields.get("id_pedido", [""])[0]
+
+            # Obtener pedido y producto para mostrar resumen
+            pedido = pedido_model.obtener_pedido_por_id(id_pedido)
+            productos = pedido_model.obtener_productos_pedido(id_pedido)
+
+            if not pedido or not productos:
+                self.send_error(404, "Pedido no encontrado")
+                return
+
+            producto = productos[0]  # Suponiendo 1 producto por pedido
+
+            try:
+                with open("view/pago_transferencia.html", "r", encoding="utf-8") as file:
+                    html = file.read()
+
+                html = html.replace("{{id_pedido}}", str(id_pedido))
+                html = html.replace("{{nombre_producto}}", producto["nombre"])
+                html = html.replace("{{cantidad}}", str(producto["cantidad"]))
+                html = html.replace("{{monto}}", str(pedido["total"]))
+                html = html.replace("{{monto_formateado}}", self.format_currency(pedido["total"], "CLP"))
+
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                self.wfile.write(html.encode("utf-8"))
+            except Exception as e:
+                print("Error al mostrar pago por transferencia:", e)
+                self.send_error(500, "Error interno")
+            return
+        
+        elif self.path == "/confirmar_transferencia_pago":
+            length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(length).decode('utf-8')
+            data = urllib.parse.parse_qs(post_data)
+
+            id_pedido = data.get("id_pedido", [""])[0]
+            tarjeta = data.get("tarjeta", [""])[0]
+            monto = data.get("monto", [""])[0]
+            mensaje = data.get("mensaje", [""])[0]
+
+            pedido = pedido_model.obtener_pedido_por_id(id_pedido)
+            productos = pedido_model.obtener_productos_pedido(id_pedido)
+            if not pedido or not productos:
+                self.send_error(404, "Pedido no encontrado")
+                return
+            producto = productos[0]
+
+            with open("view/confirmar_transferencia.html", "r", encoding="utf-8") as file:
+                html = file.read()
+
+            html = html.replace("{{id_pedido}}", id_pedido)
+            html = html.replace("{{nombre_producto}}", producto["nombre"])
+            html = html.replace("{{cantidad}}", str(producto["cantidad"]))
+            html = html.replace("{{monto}}", str(monto))
+            html = html.replace("{{monto_formateado}}", self.format_currency(int(monto), "CLP"))
+            html = html.replace("{{tarjeta}}", tarjeta)
+            html = html.replace("{{mensaje}}", mensaje or "Sin mensaje")
+
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(html.encode("utf-8"))
+            return
+        
+        elif self.path == "/finalizar_transferencia":
+            length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(length).decode('utf-8')
+            data = urllib.parse.parse_qs(post_data)
+
+            id_pedido = data.get("id_pedido", [""])[0]
+            accion = data.get("accion", [""])[0]
+
+            if accion == "cancelar":
+                self.send_response(303)
+                self.send_header("Location", "/cart")
+                self.end_headers()
+                return
+
+            # Confirmar transferencia
+            pedido_model.actualizar_estado_pedido(id_pedido, "pagado")
+            pedido_model.registrar_accion_pedido(id_pedido, "cliente", "Pago por transferencia confirmado")
+
+            carrito.clear()
+            self.send_response(303)
+            self.send_header("Location", "/catalog?mensaje=" + urllib.parse.quote("Pago por transferencia realizado con éxito"))
+            self.end_headers()
+            return
+        
+        elif self.path == "/pago_webpay":
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length).decode("utf-8")
+            fields = urllib.parse.parse_qs(post_data)
+            id_pedido = fields.get("id_pedido", [""])[0]
+
+            pedido = pedido_model.obtener_pedido_por_id(id_pedido)
+            productos = pedido_model.obtener_productos_pedido(id_pedido)
+
+            if not pedido or not productos:
+                self.send_error(404, "Pedido no encontrado")
+                return
+
+            total_clp = pedido["total"]
+
+            # Crear una orden de compra única
+            timestamp = str(int(time.time()))[-8:]
+            random_suffix = uuid.uuid4().hex[:6]
+            buy_order = f"P{id_pedido}T{timestamp}R{random_suffix}"
+            session_id = str(uuid.uuid4())
+            return_url = "http://localhost:8000/confirmacion_pago"
+
+            try:
+                tx = Transaction(webpay_options)
+                response = tx.create(buy_order, session_id, total_clp, return_url)
+
+                # Redirigir al formulario de pago de Webpay
+                self.send_response(302)
+                self.send_header("Location", response['url'] + "?token_ws=" + response['token'])
+                self.end_headers()
+            except Exception as e:
+                print("Error al crear transacción:", e)
+                pedido_model.actualizar_estado_pedido(id_pedido, "cancelado")
+                self.send_error(500, "Error al procesar el pago")
+            return
+
+        elif self.path == "/registrar_entrega":
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length).decode('utf-8')
+            fields = urllib.parse.parse_qs(post_data)
+            id_pedido = fields.get("id_pedido", [None])[0]
+
+            if id_pedido:
+                pedido_model.actualizar_estado_pedido(id_pedido, "entregado")
+                pedido_model.registrar_accion_pedido(id_pedido, "contador", "Entrega registrada al cliente")
+
+            self.send_response(303)
+            self.send_header("Location", "/contador")
+            self.end_headers()
+            return
+
+
         elif self.path == "/cambiar_contrasena":
             datos_usuario = self.obtener_datos_sesion()
             if not datos_usuario:
@@ -1302,7 +1530,6 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(html.encode("utf-8"))
                 return
-
 
         elif self.path == "/agregar_producto": 
             # Verificar permisos

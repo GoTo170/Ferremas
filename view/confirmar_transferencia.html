@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Confirmar Transferencia - FERREMAS</title>
+    <link rel="stylesheet" href="/static/css/pago_transferencia.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Confirmar Pago por Transferencia</h1>
+
+        <section>
+            <p><strong>Producto:</strong> {{nombre_producto}}</p>
+            <p><strong>Cantidad:</strong> {{cantidad}}</p>
+            <p><strong>Total:</strong> {{monto_formateado}}</p>
+            <p><strong>Tarjeta:</strong> {{tarjeta}}</p>
+            <p><strong>Mensaje:</strong> {{mensaje}}</p>
+        </section>
+
+        <form method="POST" action="/finalizar_transferencia">
+            <input type="hidden" name="id_pedido" value="{{id_pedido}}">
+            <input type="hidden" name="tarjeta" value="{{tarjeta}}">
+            <input type="hidden" name="monto" value="{{monto}}">
+            <input type="hidden" name="mensaje" value="{{mensaje}}">
+
+            <button type="submit" name="accion" value="confirmar">Confirmar Pago</button>
+            <button type="submit" name="accion" value="cancelar">Cancelar</button>
+        </form>
+    </div>
+</body>
+</html>
